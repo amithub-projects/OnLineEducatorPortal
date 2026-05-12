@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% block title %}Educator Dashboard - {{ site_settings.site_name }}{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    {% include 'educator/sidebar.html' %}
+
+    <!-- Main Content -->
+    <div class="dashboard-main">
+        <div class="dashboard-topbar">
+            <div>
+                <h4 class="mb-0">Welcome back, {{ request.user.full_name }}! 👋</h4>
+                <small class="text-muted">Here's what's happening with your courses today</small>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{% url 'create_live_session' %}" class="btn btn-danger btn-sm">
+                    <i class="bi bi-camera-video-fill me-1"></i>Go Live
+                </a>
+                <a href="{% url 'course_create' %}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-lg me-1"></i>New Course
+                </a>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row g-4 mb-4">
+            <div class="col-6 col-xl-3">
+                <div class="stat-card stat-card-blue">
+                    <div class="stat-card-icon"><i class="bi bi-people-fill"></i></div>
+                    <div class="stat-card-content">
+                        <span class="stat-card-number">{{ total_students }}</span>
+                        <span class="stat-card-label">Total Students</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="stat-card stat-card-purple">
+                    <div class="stat-card-icon"><i class="bi bi-journal-richtext"></i></div>
+                    <div class="stat-card-content">
+                        <span class="stat-card-number">{{ total_courses }}</span>
+                        <span class="stat-card-label">Total Courses</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="stat-card stat-card-green">
+                    <div class="stat-card-icon"><i class="bi bi-currency-rupee"></i></div>
+                    <div class="stat-card-content">
+                        <span class="stat-card-number">₹{{ total_revenue|floatformat:0 }}</span>
+                        <span class="stat-card-label">Total Revenue</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="stat-card stat-card-orange">
+                    <div class="stat-card-icon"><i class="bi bi-calendar-event"></i></div>
+                    <div class="stat-card-content">
+                        <span class="stat-card-number">{{ upcoming_classes.count }}</span>
+                        <span class="stat-card-label">Upcoming Classes</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- My Courses -->
+            <div class="col-lg-8">
+                <div class="dash-card">
+                    <div class="dash-card-header">
+                        <h5 class="mb-0">My Courses</h5>
+                        <a href="{% url 'course_create' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus me-1"></i>Add Course</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Course</th>
+                                    <th>Students</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for course in courses %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            {% if course.thumbnail %}
+                                            <img src="{{ course.thumbnail.url }}" class="rounded" width="40" height="40" style="object-fit:cover">
+                                            {% else %}
+                                            <div class="course-thumb-mini"><i class="bi bi-journal-text"></i></div>
+                                            {% endif %}
+                                            <div>
+                                                <span class="fw-semibold">{{ course.title|truncatechars:30 }}</span><br>
+                                                <small class="text-muted">{{ course.get_level_display }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-primary">{{ course.student_count }}</span></td>
+                                    <td>
+                                        {% if course.is_published %}
+                                        <span class="badge bg-success">Published</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Draft</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-1">
+                                            <a href="{% url 'course_detail_educator' course.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>
+                                            <a href="{% url 'course_edit' course.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                                            <a href="{% url 'create_chat_room' course.pk %}" class="btn btn-sm btn-outline-info"><i class="bi bi-chat"></i></a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="4" class="text-center py-4 text-muted">No courses yet. <a href="{% url 'course_create' %}">Create your first course!</a></td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar widgets -->
+            <div class="col-lg-4">
+                <!-- Upcoming classes -->
+                <div class="dash-card mb-4">
+                    <div class="dash-card-header">
+                        <h6 class="mb-0">Upcoming Classes</h6>
+                        <a href="{% url 'schedule_create' %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus"></i></a>
+                    </div>
+                    {% for cls in upcoming_classes %}
+                    <div class="schedule-item">
+                        <div class="schedule-time">{{ cls.start_time|date:"d M" }}<br><small>{{ cls.start_time|time:"H:i" }}</small></div>
+                        <div class="schedule-info">
+                            <span class="fw-semibold">{{ cls.title|truncatechars:25 }}</span><br>
+                            <small class="text-muted">{{ cls.duration_minutes }} mins</small>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted text-center p-3">No upcoming classes. <a href="{% url 'schedule_create' %}">Schedule one!</a></p>
+                    {% endfor %}
+                </div>
+
+                <!-- Recent payments -->
+                <div class="dash-card">
+                    <div class="dash-card-header">
+                        <h6 class="mb-0">Recent Payments</h6>
+                        <a href="{% url 'payment_history' %}" class="btn btn-sm btn-outline-secondary">View All</a>
+                    </div>
+                    {% for payment in recent_payments %}
+                    <div class="payment-item d-flex justify-content-between align-items-center p-2 border-bottom">
+                        <div>
+                            <span class="fw-semibold small">{{ payment.student.full_name }}</span><br>
+                            <small class="text-muted">{{ payment.course.title|truncatechars:20 }}</small>
+                        </div>
+                        <span class="text-success fw-bold">₹{{ payment.amount }}</span>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted text-center p-3">No payments yet</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

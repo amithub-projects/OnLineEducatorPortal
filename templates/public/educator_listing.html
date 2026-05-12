@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}Find Educators - {{ site_settings.site_name }}{% endblock %}
+{% block content %}
+<section class="page-hero">
+    <div class="container text-center">
+        <h1>Find Your Perfect Educator</h1>
+        <p class="lead">Browse expert educators by subject, experience, and more</p>
+    </div>
+</section>
+<section class="section-padding">
+    <div class="container">
+        <!-- Filters -->
+        <div class="filter-bar mb-4">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <input type="text" name="q" class="form-control" placeholder="Search educators..." value="{{ search_q }}">
+                </div>
+                <div class="col-md-3">
+                    <input type="text" name="subject" class="form-control" placeholder="Filter by subject..." value="{{ subject_filter }}">
+                </div>
+                <div class="col-md-3">
+                    <select name="experience" class="form-select">
+                        <option value="">Any Experience</option>
+                        <option value="1" {% if experience_filter == '1' %}selected{% endif %}>1+ Years</option>
+                        <option value="3" {% if experience_filter == '3' %}selected{% endif %}>3+ Years</option>
+                        <option value="5" {% if experience_filter == '5' %}selected{% endif %}>5+ Years</option>
+                        <option value="10" {% if experience_filter == '10' %}selected{% endif %}>10+ Years</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel me-1"></i>Filter</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Results -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <p class="text-muted mb-0">{{ educators.count }} educator{{ educators.count|pluralize }} found</p>
+            {% if search_q or subject_filter or experience_filter %}
+            <a href="{% url 'educator_listing' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-x-circle me-1"></i>Clear Filters</a>
+            {% endif %}
+        </div>
+
+        <div class="row g-4">
+            {% for educator in educators %}
+            <div class="col-md-6 col-lg-4">
+                <div class="educator-card h-100">
+                    <div class="educator-card-header">
+                        {% if educator.avatar %}
+                            <img src="{{ educator.avatar.url }}" alt="{{ educator.full_name }}" class="educator-avatar">
+                        {% else %}
+                            <div class="educator-avatar-placeholder">{{ educator.full_name|first|upper }}</div>
+                        {% endif %}
+                        <div class="educator-info">
+                            <h5 class="educator-name">{{ educator.full_name }}</h5>
+                            {% if educator.educator_profile %}
+                            <p class="educator-subjects small">{{ educator.educator_profile.subjects|truncatechars:50 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if educator.educator_profile %}
+                    <div class="educator-bio">
+                        <p class="small text-muted">{{ educator.educator_profile.bio|truncatechars:100 }}</p>
+                    </div>
+                    <div class="educator-stats">
+                        <span><i class="bi bi-award text-primary"></i> {{ educator.educator_profile.qualification|default:"Expert" }}</span>
+                        <span><i class="bi bi-briefcase text-success"></i> {{ educator.educator_profile.experience_years }} yrs</span>
+                        <span><i class="bi bi-star-fill text-warning"></i> {{ educator.educator_profile.rating|default:"5.0" }}</span>
+                    </div>
+                    <div class="d-flex gap-2 mt-3">
+                        <a href="{% url 'educator_profile' educator.educator_profile.unique_link %}" class="btn btn-primary btn-sm flex-fill">
+                            <i class="bi bi-person me-1"></i>View Profile
+                        </a>
+                        {% if user.is_authenticated and user.role == 'student' %}
+                        <a href="{% url 'private_messages' educator.pk %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-chat"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <i class="bi bi-search fs-1 text-muted"></i>
+                <h4 class="mt-3 text-muted">No educators found</h4>
+                <p class="text-muted">Try adjusting your search filters</p>
+                <a href="{% url 'educator_listing' %}" class="btn btn-primary">View All Educators</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

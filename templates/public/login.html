@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Login - {{ site_settings.site_name }}{% endblock %}
+{% block content %}
+<section class="auth-section">
+    <div class="container">
+        <div class="row justify-content-center min-vh-100 align-items-center py-5">
+            <div class="col-lg-4">
+                <div class="auth-card">
+                    <div class="auth-header text-center mb-4">
+                        <div class="auth-icon"><i class="bi bi-shield-lock-fill"></i></div>
+                        <h2 class="auth-title">Welcome Back</h2>
+                        <p class="text-muted">Sign in to your account</p>
+                    </div>
+                    <form method="post" id="loginForm">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Email Address</label>
+                            <input type="email" name="email" class="form-control form-control-lg" placeholder="your@email.com" required value="{{ form.email.value|default:'' }}">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Password</label>
+                            <div class="input-group">
+                                <input type="password" name="password" id="passwordField" class="form-control form-control-lg" placeholder="••••••••" required>
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePw()"><i class="bi bi-eye"></i></button>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="rememberMe">
+                                <label class="form-check-label" for="rememberMe">Remember me</label>
+                            </div>
+                            <a href="{% url 'forgot_password' %}" class="text-primary text-decoration-none small">Forgot Password?</a>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 btn-lg">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+                        </button>
+                    </form>
+                    <div class="auth-footer text-center mt-4">
+                        <p>New here? <a href="{% url 'register_student' %}" class="text-primary fw-semibold">Create Student Account</a></p>
+                        <p>Educator? <a href="{% url 'register_educator' %}" class="text-primary fw-semibold">Register as Educator</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+{% block extra_js %}
+<script>
+function togglePw() {
+    const f = document.getElementById('passwordField');
+    f.type = f.type === 'password' ? 'text' : 'password';
+}
+</script>
+{% endblock %}

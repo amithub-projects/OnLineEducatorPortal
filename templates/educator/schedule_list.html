@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}My Schedule - Educator{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+{% block content %}
+<div class="dashboard-layout">
+  {% include 'educator/sidebar.html' %}
+  <div class="dashboard-main">
+    <div class="dashboard-topbar">
+      <h4 class="mb-0">Class Schedule</h4>
+      <a href="{% url 'schedule_create' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus me-1"></i>Schedule Class</a>
+    </div>
+    <div class="p-4">
+      <!-- Upcoming -->
+      <h5 class="fw-bold mb-3">📅 Upcoming Classes</h5>
+      <div class="row g-3 mb-5">
+        {% for sch in upcoming %}
+        <div class="col-md-6 col-lg-4">
+          <div class="dash-card p-3 h-100">
+            <div class="d-flex justify-content-between mb-2">
+              <span class="badge bg-primary">{{ sch.start_time|date:"d M Y" }}</span>
+              <span class="badge bg-light text-dark">{{ sch.start_time|time:"H:i" }} - {{ sch.end_time|time:"H:i" }}</span>
+            </div>
+            <h6 class="fw-bold">{{ sch.title }}</h6>
+            {% if sch.course %}<p class="text-muted small mb-2"><i class="bi bi-journal me-1"></i>{{ sch.course.title }}</p>{% endif %}
+            {% if sch.description %}<p class="text-muted small mb-2">{{ sch.description|truncatechars:80 }}</p>{% endif %}
+            {% if sch.meeting_link %}<a href="{{ sch.meeting_link }}" target="_blank" class="btn btn-success btn-sm mb-2 w-100"><i class="bi bi-camera-video me-1"></i>Join Meeting</a>{% endif %}
+            <div class="d-flex gap-2">
+              <a href="{% url 'attendance_view' sch.pk %}" class="btn btn-outline-secondary btn-sm flex-fill">Attendance</a>
+              <a href="{% url 'schedule_edit' sch.pk %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil"></i></a>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="col-12"><p class="text-muted">No upcoming classes. <a href="{% url 'schedule_create' %}">Schedule one now.</a></p></div>
+        {% endfor %}
+      </div>
+      <!-- Past -->
+      <h5 class="fw-bold mb-3">🕐 Past Classes</h5>
+      <div class="dash-card">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light"><tr><th>Class</th><th>Date</th><th>Duration</th><th>Actions</th></tr></thead>
+            <tbody>
+              {% for sch in past %}
+              <tr>
+                <td><span class="fw-semibold">{{ sch.title }}</span>{% if sch.course %}<br><small class="text-muted">{{ sch.course.title }}</small>{% endif %}</td>
+                <td>{{ sch.start_time|date:"d M Y H:i" }}</td>
+                <td>{{ sch.duration_minutes }} min</td>
+                <td><a href="{% url 'attendance_view' sch.pk %}" class="btn btn-xs btn-outline-secondary">View Attendance</a></td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="4" class="text-center text-muted py-3">No past classes</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

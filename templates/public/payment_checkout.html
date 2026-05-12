@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Payment - {{ course.title }}{% endblock %}
+{% block content %}
+<section class="page-hero"><div class="container text-center"><h1>Complete Your Enrollment</h1><p class="lead">Secure payment powered by Razorpay</p></div></section>
+<section class="section-padding">
+  <div class="container"><div class="row justify-content-center"><div class="col-lg-5">
+    <div class="dash-card p-4">
+      <h5 class="fw-bold mb-3">Order Summary</h5>
+      <div class="d-flex justify-content-between mb-2"><span>{{ course.title }}</span><span class="fw-bold">₹{{ course.price }}</span></div>
+      <div class="d-flex justify-content-between mb-2 text-muted small"><span>by {{ course.educator.full_name }}</span><span>{{ course.get_level_display }}</span></div>
+      <hr>
+      <div class="d-flex justify-content-between fw-bold fs-5"><span>Total</span><span class="text-primary">₹{{ course.price }}</span></div>
+      <button id="rzp-button" class="btn btn-primary w-100 btn-lg mt-4">
+        <i class="bi bi-shield-lock me-2"></i>Pay Securely ₹{{ course.price }}
+      </button>
+      <p class="text-center text-muted small mt-3"><i class="bi bi-lock-fill me-1"></i>256-bit SSL encrypted payment</p>
+    </div>
+  </div></div></div>
+</section>
+{% endblock %}
+{% block extra_js %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+document.getElementById('rzp-button').onclick = function(e) {
+  var options = {
+    key: '{{ razorpay_key }}',
+    amount: '{{ order.amount }}',
+    currency: '{{ order.currency }}',
+    name: '{{ site_settings.site_name }}',
+    description: 'Enrollment: {{ course.title }}',
+    order_id: '{{ order.id }}',
+    handler: function(response) {
+      var form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '{% url "payment_callback" %}';
+      var csrf = document.createElement('input');
+      csrf.type = 'hidden'; csrf.name = 'csrfmiddlewaretoken'; csrf.value = '{{ csrf_token }}';
+      form.appendChild(csrf);
+      ['razorpay_payment_id', 'razorpay_order_id', 'razorpay_signature'].forEach(function(key) {
+        var inp = document.createElement('input');
+        inp.type = 'hidden'; inp.name = key; inp.value = response[key];
+        form.appendChild(inp);
+      });
+      document.body.appendChild(form);
+      form.submit();
+    },
+    prefill: { name: '{{ request.user.full_name }}', email: '{{ request.user.email }}' },
+    theme: { color: '#7c3aed' }
+  };
+  var rzp = new Razorpay(options);
+  rzp.open();
+  e.preventDefault();
+};
+</script>
+{% endblock %}

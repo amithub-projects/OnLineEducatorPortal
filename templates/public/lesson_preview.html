@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}{{ lesson.title }} - Free Preview - {{ site_settings.site_name }}{% endblock %}
+
+{% block content %}
+<section class="section-padding bg-dark text-white">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'course_public_detail' course.slug %}" class="text-white-50">{{ course.title }}</a></li>
+                        <li class="breadcrumb-item active text-white" aria-current="page">Free Preview</li>
+                    </ol>
+                </nav>
+                <h2 class="fw-bold mb-4">{{ lesson.title }}</h2>
+
+                <div class="ratio ratio-16x9 bg-black rounded-3 overflow-hidden shadow-lg mb-4">
+                    {% if youtube_id %}
+                        <div class="video-player" data-plyr-provider="youtube" data-plyr-embed-id="{{ youtube_id }}"></div>
+                    {% elif lesson.video_file %}
+                        <video class="video-player" playsinline controls>
+                            <source src="{{ lesson.video_file.url }}" type="video/mp4">
+                        </video>
+                    {% else %}
+                        <div class="d-flex align-items-center justify-content-center text-muted">
+                            <div class="text-center">
+                                <i class="bi bi-camera-video-off fs-1"></i>
+                                <p>Video content not available.</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-md-8">
+                        <h4 class="fw-bold">About this lesson</h4>
+                        <p class="opacity-75">{{ lesson.description|linebreaks|default:"No description available." }}</p>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="dash-card p-4 bg-white text-dark">
+                            <h5 class="fw-bold mb-3">Love what you see?</h5>
+                            <p class="small text-muted mb-4">Get full access to all lessons, assignments, and quizzes in this course.</p>
+                            <a href="{% url 'enroll_course' course.slug %}" class="btn btn-primary w-100 btn-lg mb-2">Enroll in Course</a>
+                            <p class="text-center small mb-0 text-muted">Price: {% if course.is_free %}Free{% else %}₹{{ course.price }}{% endif %}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

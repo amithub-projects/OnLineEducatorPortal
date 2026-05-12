@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Schedule Class - Educator{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+{% block content %}
+<div class="dashboard-layout">
+  {% include 'educator/sidebar.html' %}
+  <div class="dashboard-main">
+    <div class="dashboard-topbar"><h4 class="mb-0">Schedule a Class</h4></div>
+    <div class="p-4"><div class="row justify-content-center"><div class="col-lg-7">
+      <div class="dash-card p-4">
+        <form method="post">
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-12"><label class="form-label fw-semibold">Class Title *</label><input type="text" name="title" class="form-control" placeholder="e.g. Python Chapter 3 - Functions" required></div>
+            <div class="col-12"><label class="form-label fw-semibold">Related Course (optional)</label>
+              <select name="course" class="form-select"><option value="">-- None --</option>{% for c in courses %}<option value="{{ c.pk }}">{{ c.title }}</option>{% endfor %}</select>
+            </div>
+            <div class="col-md-6"><label class="form-label fw-semibold">Start Date & Time *</label><input type="datetime-local" name="start_time" class="form-control" required></div>
+            <div class="col-md-6"><label class="form-label fw-semibold">End Date & Time *</label><input type="datetime-local" name="end_time" class="form-control" required></div>
+            <div class="col-12"><label class="form-label fw-semibold">Meeting Link</label><input type="url" name="meeting_link" class="form-control" placeholder="https://meet.google.com/..."></div>
+            <div class="col-12"><label class="form-label fw-semibold">Description</label><textarea name="description" class="form-control" rows="3" placeholder="What will be covered in this class?"></textarea></div>
+            <div class="col-12">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="send_notification" id="sendNotif" checked>
+                <label class="form-check-label" for="sendNotif">📧 Send email notifications to enrolled students</label>
+              </div>
+            </div>
+          </div>
+          <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary px-5"><i class="bi bi-calendar-check me-2"></i>Schedule Class</button>
+            <a href="{% url 'schedule_list' %}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div></div></div>
+  </div>
+</div>
+{% endblock %}

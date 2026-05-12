@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Manage Educators - Admin{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+{% block content %}
+<div class="dashboard-layout">
+  {% include 'admin_panel/sidebar.html' %}
+  <div class="dashboard-main">
+    <div class="dashboard-topbar">
+      <h4 class="mb-0">Manage Educators</h4>
+      <a href="{% url 'create_educator_admin' %}" class="btn btn-primary btn-sm"><i class="bi bi-person-plus me-1"></i>Add Educator</a>
+    </div>
+    <div class="p-4">
+      <div class="dash-card">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light"><tr><th>Educator</th><th>Subjects</th><th>Experience</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+            <tbody>
+              {% for educator in educators %}
+              <tr>
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    {% if educator.avatar %}<img src="{{ educator.avatar.url }}" class="rounded-circle" width="36" height="36" style="object-fit:cover">{% else %}<div class="avatar-xs">{{ educator.full_name|first|upper }}</div>{% endif %}
+                    <div><span class="fw-semibold">{{ educator.full_name }}</span><br><small class="text-muted">{{ educator.email }}</small></div>
+                  </div>
+                </td>
+                <td><small>{% if educator.educator_profile %}{{ educator.educator_profile.subjects|truncatechars:40 }}{% else %}-{% endif %}</small></td>
+                <td>{% if educator.educator_profile %}{{ educator.educator_profile.experience_years }} yrs{% else %}-{% endif %}</td>
+                <td>{% if not educator.is_active %}<span class="badge bg-danger">Suspended</span>{% elif educator.is_approved %}<span class="badge bg-success">Approved</span>{% else %}<span class="badge bg-warning text-dark">Pending</span>{% endif %}</td>
+                <td><small>{{ educator.date_joined|date:"d M Y" }}</small></td>
+                <td>
+                  <div class="d-flex gap-1 flex-wrap">
+                    {% if not educator.is_approved %}<a href="{% url 'approve_educator' educator.pk %}" class="btn btn-xs btn-success">Approve</a>{% endif %}
+                    {% if educator.is_active and educator.is_approved %}<a href="{% url 'suspend_educator' educator.pk %}" class="btn btn-xs btn-warning" onclick="return confirm('Suspend this educator?')">Suspend</a>{% endif %}
+                    <form method="post" action="{% url 'delete_user' educator.pk %}" class="d-inline" onsubmit="return confirm('Delete permanently?')">{% csrf_token %}<button class="btn btn-xs btn-danger">Delete</button></form>
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="6" class="text-center py-4 text-muted">No educators found</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

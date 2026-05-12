@@ -1,0 +1,53 @@
+<nav class="dashboard-sidebar">
+    <div class="sidebar-brand">
+        <i class="bi bi-mortarboard-fill"></i>
+        <span>EduPortal</span>
+    </div>
+    <div class="sidebar-user">
+        {% if request.user.avatar %}
+            <img src="{{ request.user.avatar.url }}" class="sidebar-avatar" alt="Avatar">
+        {% else %}
+            <div class="sidebar-avatar-placeholder">{{ request.user.full_name|first|upper }}</div>
+        {% endif %}
+        <div>
+            <p class="sidebar-user-name">{{ request.user.full_name|truncatechars:18 }}</p>
+            <span class="sidebar-user-role">Educator</span>
+        </div>
+    </div>
+    <ul class="sidebar-nav">
+        <li class="sidebar-section">Main</li>
+        <li><a href="{% url 'educator_dashboard' %}" class="sidebar-link {% if request.resolver_match.url_name == 'educator_dashboard' %}active{% endif %}">
+            <i class="bi bi-speedometer2"></i><span>Dashboard</span>
+        </a></li>
+        <li><a href="{% url 'course_list' %}" class="sidebar-link {% if 'course' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-journal-richtext"></i><span>My Courses</span>
+        </a></li>
+        <li><a href="{% url 'student_management' %}" class="sidebar-link">
+            <i class="bi bi-people"></i><span>Students</span>
+        </a></li>
+
+        <li class="sidebar-section">Live & Chat</li>
+        <li><a href="{% url 'live_sessions_list' %}" class="sidebar-link">
+            <i class="bi bi-camera-video"></i><span>Live Classes</span>
+        </a></li>
+        <li><a href="{% url 'chat_room_list' %}" class="sidebar-link">
+            <i class="bi bi-chat-dots"></i><span>Chat Rooms</span>
+        </a></li>
+
+        <li class="sidebar-section">Content</li>
+        <li><a href="{% url 'schedule_list' %}" class="sidebar-link">
+            <i class="bi bi-calendar-check"></i><span>Schedules</span>
+        </a></li>
+        <li><a href="{% url 'payment_history' %}" class="sidebar-link">
+            <i class="bi bi-currency-rupee"></i><span>Payments</span>
+        </a></li>
+
+        <li class="sidebar-section">Account</li>
+        <li><a href="{% url 'edit_profile' %}" class="sidebar-link">
+            <i class="bi bi-person-gear"></i><span>Profile</span>
+        </a></li>
+        <li><a href="{% url 'logout' %}" class="sidebar-link text-danger">
+            <i class="bi bi-box-arrow-right"></i><span>Logout</span>
+        </a></li>
+    </ul>
+</nav>

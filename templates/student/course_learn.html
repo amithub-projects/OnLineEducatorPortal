@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}{{ course.title }} - Learn{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+{% block show_footer %}{% endblock %}
+{% block content %}
+<div class="d-flex" style="min-height:100vh">
+  <!-- Curriculum Sidebar -->
+  <div style="width:320px;background:#1e293b;color:#fff;overflow-y:auto;flex-shrink:0;border-right:1px solid #334">
+    <div class="p-3 border-bottom" style="border-color:#334!important">
+      <h6 class="fw-bold mb-0">{{ course.title }}</h6>
+      <small class="text-muted">{{ course.educator.full_name }}</small>
+    </div>
+    {% for module in modules %}
+    <div class="border-bottom" style="border-color:#334!important">
+      <div class="p-3 fw-semibold" style="background:#162032;font-size:.85rem">{{ module.title }}</div>
+      {% for lesson in module.lessons.all %}
+      <a href="?lesson={{ lesson.pk }}" class="d-flex align-items-center gap-2 p-3 text-decoration-none border-bottom {% if current_lesson.pk == lesson.pk %}bg-primary{% else %}text-muted{% endif %}" style="border-color:#334!important;font-size:.82rem;color:{% if current_lesson.pk == lesson.pk %}#fff{% else %}#94a3b8{% endif %}">
+        <i class="bi bi-{% if lesson.video_file or lesson.video_url %}play-circle{% else %}file-earmark{% endif %} flex-shrink-0"></i>
+        <span class="flex-fill">{{ lesson.title }}</span>
+        <small>{{ lesson.duration_minutes }}m</small>
+      </a>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+  <!-- Content Area -->
+  <div class="flex-fill d-flex flex-column">
+    <div class="p-3 bg-white border-bottom d-flex justify-content-between align-items-center">
+      <div>
+        <h5 class="mb-0 fw-bold">{% if current_lesson %}{{ current_lesson.title }}{% else %}Welcome{% endif %}</h5>
+        <small class="text-muted">{{ course.title }}</small>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="{% url 'student_dashboard' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Dashboard</a>
+        <a href="{% url 'join_live_session' %}" class="btn btn-danger btn-sm"><i class="bi bi-camera-video me-1"></i>Live Class</a>
+      </div>
+    </div>
+    <div class="flex-fill p-4" style="overflow-y:auto">
+      {% if current_lesson %}
+        {% if youtube_id %}
+        <div class="ratio ratio-16x9 mb-4 rounded-3 overflow-hidden shadow">
+          <div class="video-player" data-plyr-provider="youtube" data-plyr-embed-id="{{ youtube_id }}"></div>
+        </div>
+        {% elif current_lesson.video_file %}
+        <div class="mb-4 rounded-3 overflow-hidden">
+          <video class="video-player" playsinline controls>
+            <source src="{{ current_lesson.video_file.url }}" type="video/mp4">
+          </video>
+        </div>
+        {% endif %}
+        <h4 class="fw-bold">{{ current_lesson.title }}</h4>
+        {% if current_lesson.description %}<p class="text-muted">{{ current_lesson.description }}</p>{% endif %}
+      {% else %}
+        <div class="text-center py-5">
+          <i class="bi bi-play-circle fs-1 text-primary"></i>
+          <h4 class="mt-3">Select a lesson to begin</h4>
+          <p class="text-muted">Choose from the curriculum on the left</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

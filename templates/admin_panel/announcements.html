@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Announcements - Admin{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+{% block content %}
+<div class="dashboard-layout">
+  {% include 'admin_panel/sidebar.html' %}
+  <div class="dashboard-main">
+    <div class="dashboard-topbar"><h4 class="mb-0">Announcements</h4></div>
+    <div class="p-4">
+      <div class="row g-4">
+        <div class="col-lg-5">
+          <div class="dash-card p-4">
+            <h5 class="fw-bold mb-3">New Announcement</h5>
+            <form method="post">{% csrf_token %}
+              <div class="mb-3"><label class="form-label fw-semibold">Title</label><input type="text" name="title" class="form-control" required placeholder="Announcement title"></div>
+              <div class="mb-3"><label class="form-label fw-semibold">Content</label><textarea name="content" class="form-control" rows="4" required placeholder="Announcement message..."></textarea></div>
+              <button type="submit" class="btn btn-primary w-100"><i class="bi bi-megaphone me-2"></i>Publish</button>
+            </form>
+          </div>
+        </div>
+        <div class="col-lg-7">
+          <div class="dash-card">
+            <div class="dash-card-header"><h5 class="mb-0">All Announcements</h5></div>
+            {% for ann in announcements %}
+            <div class="p-3 border-bottom">
+              <div class="d-flex justify-content-between align-items-start">
+                <div><h6 class="mb-1 fw-bold">{{ ann.title }}</h6><p class="text-muted small mb-1">{{ ann.content }}</p><small class="text-muted">{{ ann.created_at|date:"d M Y H:i" }}</small></div>
+                <div class="d-flex gap-1 ms-3">
+                  <a href="{% url 'toggle_announcement' ann.pk %}" class="btn btn-xs {% if ann.is_active %}btn-success{% else %}btn-outline-secondary{% endif %}">{% if ann.is_active %}Active{% else %}Inactive{% endif %}</a>
+                </div>
+              </div>
+            </div>
+            {% empty %}<p class="text-muted text-center p-4">No announcements yet.</p>{% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

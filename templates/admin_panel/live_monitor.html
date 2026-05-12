@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Live Monitor - Admin{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+{% block content %}
+<div class="dashboard-layout">
+  {% include 'admin_panel/sidebar.html' %}
+  <div class="dashboard-main">
+    <div class="dashboard-topbar"><h4 class="mb-0">Live Session Monitor</h4><span class="badge bg-danger">{{ active_sessions.count }} Active</span></div>
+    <div class="p-4">
+      <h5 class="fw-bold mb-3"><span class="text-danger"><i class="bi bi-record-circle-fill me-1"></i></span>Currently Live</h5>
+      <div class="row g-3 mb-4">
+        {% for session in active_sessions %}
+        <div class="col-md-6 col-lg-4">
+          <div class="dash-card p-3 border-danger" style="border-left:4px solid #ef4444!important">
+            <div class="d-flex justify-content-between mb-2">
+              <h6 class="fw-bold mb-0">{{ session.title }}</h6>
+              <span class="badge bg-danger"><i class="bi bi-record-circle-fill me-1"></i>LIVE</span>
+            </div>
+            <p class="text-muted small mb-1"><i class="bi bi-person me-1"></i>{{ session.educator.full_name }}</p>
+            {% if session.course %}<p class="text-muted small mb-2"><i class="bi bi-journal me-1"></i>{{ session.course.title }}</p>{% endif %}
+            <div class="d-flex justify-content-between">
+              <span class="badge bg-light text-dark border">Code: {{ session.room_code }}</span>
+              <span class="badge bg-primary">{{ session.participants.count }} viewers</span>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="col-12"><div class="alert alert-info"><i class="bi bi-info-circle me-2"></i>No active live sessions at the moment.</div></div>
+        {% endfor %}
+      </div>
+      <h5 class="fw-bold mb-3">All Sessions</h5>
+      <div class="dash-card">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light"><tr><th>Title</th><th>Educator</th><th>Room Code</th><th>Participants</th><th>Status</th><th>Created</th></tr></thead>
+            <tbody>
+              {% for session in all_sessions %}
+              <tr>
+                <td class="fw-semibold">{{ session.title }}</td>
+                <td>{{ session.educator.full_name }}</td>
+                <td><code>{{ session.room_code }}</code></td>
+                <td>{{ session.participants.count }}</td>
+                <td>{% if session.is_active %}<span class="badge bg-danger">Live</span>{% else %}<span class="badge bg-secondary">Ended</span>{% endif %}</td>
+                <td><small>{{ session.created_at|date:"d M Y H:i" }}</small></td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="6" class="text-center py-4 text-muted">No sessions found.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

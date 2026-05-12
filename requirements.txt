@@ -1,0 +1,15 @@
+Django==4.2.30
+djangorestframework==3.17.1
+channels==4.3.2
+channels-redis==4.3.0
+daphne==4.2.1
+django-cors-headers==4.9.0
+whitenoise==6.12.0
+python-decouple==3.8
+Pillow==10.4.0
+razorpay==2.0.1
+django-allauth==65.16.1
+asgiref==3.11.1
+sqlparse==0.5.5
+redis==7.4.0
+autobahn==25.12.2

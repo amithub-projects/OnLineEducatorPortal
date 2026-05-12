@@ -1,0 +1,269 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Home - {{ site_settings.site_name }}{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="hero-bg-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+    <div class="container">
+        <div class="row align-items-center min-vh-85">
+            <div class="col-lg-6" data-aos="fade-right">
+                <div class="hero-badge mb-3">
+                    <i class="bi bi-lightning-fill"></i> Live Classes Available Now
+                </div>
+                <h1 class="hero-title">{{ site.hero_title|default:"Find Your Perfect Educator" }}</h1>
+                <p class="hero-subtitle">{{ site.hero_subtitle|default:"Connect with expert educators and unlock your true potential with personalized learning." }}</p>
+                <div class="hero-stats d-flex gap-4 mb-4">
+                    <div class="stat-item">
+                        <span class="stat-num">{{ total_educators }}+</span>
+                        <span class="stat-label">Educators</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <span class="stat-num">{{ total_students }}+</span>
+                        <span class="stat-label">Students</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <span class="stat-num">{{ total_courses }}+</span>
+                        <span class="stat-label">Courses</span>
+                    </div>
+                </div>
+                <div class="hero-actions d-flex gap-3 flex-wrap">
+                    <a href="{% url 'educator_listing' %}" class="btn btn-primary btn-lg px-4">
+                        <i class="bi bi-search me-2"></i>Find Educators
+                    </a>
+                    <a href="{% url 'register_student' %}" class="btn btn-outline-light btn-lg px-4">
+                        Get Started Free
+                    </a>
+                </div>
+                <!-- Search Bar -->
+                <div class="hero-search mt-4">
+                    <form action="{% url 'educator_listing' %}" method="get" class="search-form">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-0"><i class="bi bi-search text-muted"></i></span>
+                            <input type="text" name="q" class="form-control border-0" placeholder="Search by subject, educator name...">
+                            <button class="btn btn-primary px-4" type="submit">Search</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="col-lg-6 d-none d-lg-flex justify-content-center">
+                <div class="hero-illustration">
+                    <div class="floating-card card-1">
+                        <i class="bi bi-camera-video-fill text-primary"></i>
+                        <span>Live Class</span>
+                    </div>
+                    <div class="floating-card card-2">
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <span>4.9 Rating</span>
+                    </div>
+                    <div class="floating-card card-3">
+                        <i class="bi bi-people-fill text-success"></i>
+                        <span>{{ total_students }}+ Students</span>
+                    </div>
+                    <div class="hero-circle">
+                        <i class="bi bi-mortarboard-fill"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Announcements -->
+{% if announcements %}
+<section class="announcements-bar py-3 bg-primary text-white">
+    <div class="container">
+        <div class="d-flex align-items-center gap-3">
+            <span class="badge bg-warning text-dark fw-bold flex-shrink-0"><i class="bi bi-megaphone-fill me-1"></i>Announcements</span>
+            <div class="announcement-ticker">
+                {% for ann in announcements %}
+                    <span class="me-5">📢 {{ ann.title }}: {{ ann.content|truncatechars:80 }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Categories -->
+{% if categories %}
+<section class="section-padding">
+    <div class="container">
+        <div class="section-header text-center mb-5">
+            <span class="section-badge">Browse by Subject</span>
+            <h2 class="section-title">Explore Course Categories</h2>
+            <p class="section-subtitle">Find courses tailored to your learning goals</p>
+        </div>
+        <div class="row g-3 justify-content-center">
+            {% for cat in categories %}
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="{% url 'educator_listing' %}?category={{ cat.slug }}" class="category-card text-center d-block">
+                    <div class="category-icon">
+                        <i class="bi bi-{{ cat.icon|default:'book' }}"></i>
+                    </div>
+                    <span class="category-name">{{ cat.name }}</span>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Featured Educators -->
+{% if featured_educators %}
+<section class="section-padding bg-light-purple">
+    <div class="container">
+        <div class="section-header text-center mb-5">
+            <span class="section-badge">Top Educators</span>
+            <h2 class="section-title">Featured Educators</h2>
+            <p class="section-subtitle">Learn from industry experts and experienced teachers</p>
+        </div>
+        <div class="row g-4">
+            {% for educator in featured_educators %}
+            <div class="col-md-6 col-lg-4">
+                <div class="educator-card">
+                    <div class="educator-card-header">
+                        {% if educator.avatar %}
+                            <img src="{{ educator.avatar.url }}" alt="{{ educator.full_name }}" class="educator-avatar">
+                        {% else %}
+                            <div class="educator-avatar-placeholder">
+                                {{ educator.full_name|first|upper }}
+                            </div>
+                        {% endif %}
+                        <div class="educator-info">
+                            <h5 class="educator-name">{{ educator.full_name }}</h5>
+                            <p class="educator-subjects">
+                                {% if educator.educator_profile %}
+                                    {{ educator.educator_profile.subjects|truncatechars:40 }}
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="educator-stats">
+                        {% if educator.educator_profile %}
+                        <span><i class="bi bi-briefcase text-primary"></i> {{ educator.educator_profile.experience_years }} yrs exp</span>
+                        <span><i class="bi bi-star-fill text-warning"></i> {{ educator.educator_profile.rating|default:"5.0" }}</span>
+                        <span><i class="bi bi-people text-success"></i> {{ educator.courses.count }} courses</span>
+                        {% endif %}
+                    </div>
+                    {% if educator.educator_profile %}
+                    <a href="{% url 'educator_profile' educator.educator_profile.unique_link %}" class="btn btn-outline-primary btn-sm w-100 mt-3">
+                        View Profile <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="text-center mt-5">
+            <a href="{% url 'educator_listing' %}" class="btn btn-primary btn-lg px-5">
+                View All Educators <i class="bi bi-arrow-right ms-2"></i>
+            </a>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Popular Courses -->
+{% if popular_courses %}
+<section class="section-padding">
+    <div class="container">
+        <div class="section-header text-center mb-5">
+            <span class="section-badge">Start Learning</span>
+            <h2 class="section-title">Popular Courses</h2>
+        </div>
+        <div class="row g-4">
+            {% for course in popular_courses %}
+            <div class="col-md-6 col-lg-3">
+                <div class="course-card">
+                    <div class="course-thumbnail">
+                        {% if course.thumbnail %}
+                            <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}">
+                        {% else %}
+                            <div class="course-thumb-placeholder">
+                                <i class="bi bi-play-circle-fill"></i>
+                            </div>
+                        {% endif %}
+                        {% if course.is_free %}
+                        <span class="course-badge badge-free">Free</span>
+                        {% endif %}
+                    </div>
+                    <div class="course-body">
+                        <span class="course-level">{{ course.get_level_display }}</span>
+                        <h6 class="course-title">{{ course.title }}</h6>
+                        <p class="course-educator">by {{ course.educator.full_name }}</p>
+                        <div class="course-meta d-flex justify-content-between align-items-center">
+                            <span class="course-price">
+                                {% if course.is_free %}Free{% else %}₹{{ course.price }}{% endif %}
+                            </span>
+                            <span class="course-students"><i class="bi bi-people"></i> {{ course.get_enrolled_count }}</span>
+                        </div>
+                        <a href="{% url 'course_public_detail' course.slug %}" class="btn btn-primary btn-sm w-100 mt-2">View Course</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- How it works -->
+<section class="section-padding bg-gradient-dark text-white">
+    <div class="container">
+        <div class="section-header text-center mb-5">
+            <span class="section-badge-light">Simple Process</span>
+            <h2 class="section-title text-white">How It Works</h2>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-3 text-center">
+                <div class="step-icon"><span class="step-number">1</span><i class="bi bi-person-plus-fill"></i></div>
+                <h5 class="mt-3">Register</h5>
+                <p class="text-muted">Create your student account in minutes</p>
+            </div>
+            <div class="col-md-3 text-center">
+                <div class="step-icon"><span class="step-number">2</span><i class="bi bi-search"></i></div>
+                <h5 class="mt-3">Find Educator</h5>
+                <p class="text-muted">Browse and select your perfect educator</p>
+            </div>
+            <div class="col-md-3 text-center">
+                <div class="step-icon"><span class="step-number">3</span><i class="bi bi-credit-card"></i></div>
+                <h5 class="mt-3">Enroll & Pay</h5>
+                <p class="text-muted">Secure payment via Razorpay</p>
+            </div>
+            <div class="col-md-3 text-center">
+                <div class="step-icon"><span class="step-number">4</span><i class="bi bi-mortarboard-fill"></i></div>
+                <h5 class="mt-3">Start Learning</h5>
+                <p class="text-muted">Access courses, join live classes & chat</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="section-padding">
+    <div class="container">
+        <div class="cta-card">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h2>Ready to start your learning journey?</h2>
+                    <p>Join thousands of students learning from expert educators every day.</p>
+                </div>
+                <div class="col-lg-4 text-lg-end">
+                    <a href="{% url 'register_student' %}" class="btn btn-primary btn-lg me-2">Register Now</a>
+                    <a href="{% url 'educator_listing' %}" class="btn btn-outline-primary btn-lg">Browse Educators</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

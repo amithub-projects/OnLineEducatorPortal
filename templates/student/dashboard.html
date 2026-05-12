@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}Student Dashboard - {{ site_settings.site_name }}{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+{% block content %}
+<div class="dashboard-layout">
+  <nav class="dashboard-sidebar" style="background:#0f172a">
+    <div class="sidebar-brand"><i class="bi bi-mortarboard-fill"></i><span>My Learning</span></div>
+    <div class="sidebar-user">
+      {% if student.avatar %}<img src="{{ student.avatar.url }}" class="sidebar-avatar">{% else %}<div class="sidebar-avatar-placeholder">{{ student.full_name|first|upper }}</div>{% endif %}
+      <div><p class="sidebar-user-name">{{ student.full_name|truncatechars:18 }}</p><span class="sidebar-user-role">Student</span></div>
+    </div>
+    <ul class="sidebar-nav">
+      <li class="sidebar-section">Learning</li>
+      <li><a href="{% url 'student_dashboard' %}" class="sidebar-link active"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a></li>
+      <li><a href="{% url 'educator_listing' %}" class="sidebar-link"><i class="bi bi-search"></i><span>Find Educators</span></a></li>
+      <li><a href="{% url 'join_live_session' %}" class="sidebar-link"><i class="bi bi-camera-video"></i><span>Join Live Class</span></a></li>
+      <li class="sidebar-section">Account</li>
+      <li><a href="{% url 'payment_history' %}" class="sidebar-link"><i class="bi bi-receipt"></i><span>Payments</span></a></li>
+      <li><a href="{% url 'edit_profile' %}" class="sidebar-link"><i class="bi bi-person-gear"></i><span>Profile</span></a></li>
+      <li><a href="{% url 'logout' %}" class="sidebar-link text-danger"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a></li>
+    </ul>
+  </nav>
+  <div class="dashboard-main">
+    <div class="dashboard-topbar">
+      <div><h4 class="mb-0">Welcome, {{ student.full_name }}! 🎓</h4><small class="text-muted">Continue your learning journey</small></div>
+      <a href="{% url 'educator_listing' %}" class="btn btn-primary btn-sm"><i class="bi bi-search me-1"></i>Find More Courses</a>
+    </div>
+    <div class="p-4">
+      <div class="row g-4 mb-4">
+        <div class="col-md-4"><div class="stat-card stat-card-blue"><div class="stat-card-icon"><i class="bi bi-journal-check"></i></div><div class="stat-card-content"><span class="stat-card-number">{{ enrollments.count }}</span><span class="stat-card-label">Enrolled Courses</span></div></div></div>
+        <div class="col-md-4"><div class="stat-card stat-card-green"><div class="stat-card-icon"><i class="bi bi-check2-circle"></i></div><div class="stat-card-content"><span class="stat-card-number">0</span><span class="stat-card-label">Completed</span></div></div></div>
+        <div class="col-md-4"><div class="stat-card stat-card-purple"><div class="stat-card-icon"><i class="bi bi-camera-video"></i></div><div class="stat-card-content"><span class="stat-card-number">-</span><span class="stat-card-label">Live Classes</span></div></div></div>
+      </div>
+      <h5 class="fw-bold mb-3">My Enrolled Courses</h5>
+      <div class="row g-4">
+        {% for enrollment in enrollments %}
+        <div class="col-md-6 col-lg-4">
+          <div class="course-card">
+            <div class="course-thumbnail" style="height:140px">
+              {% if enrollment.course.thumbnail %}<img src="{{ enrollment.course.thumbnail.url }}" alt="{{ enrollment.course.title }}">{% else %}<div class="course-thumb-placeholder"><i class="bi bi-play-circle-fill"></i></div>{% endif %}
+            </div>
+            <div class="course-body">
+              <h6 class="course-title">{{ enrollment.course.title }}</h6>
+              <p class="course-educator">{{ enrollment.course.educator.full_name }}</p>
+              <div class="progress mb-2" style="height:6px"><div class="progress-bar bg-primary" style="width:{{ enrollment.progress_percent }}%"></div></div>
+              <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted">{{ enrollment.progress_percent }}% complete</small>
+                <a href="{% url 'course_learn' enrollment.pk %}" class="btn btn-primary btn-sm">Continue</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+          <i class="bi bi-journal-x fs-1 text-muted"></i>
+          <h5 class="mt-3 text-muted">No courses enrolled yet</h5>
+          <a href="{% url 'educator_listing' %}" class="btn btn-primary mt-2">Find an Educator</a>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if free_lessons %}
+      <h5 class="fw-bold mt-5 mb-3">Free Lessons from Your Favourites</h5>
+      <div class="row g-4">
+        {% for lesson in free_lessons %}
+        <div class="col-md-6 col-lg-4">
+          <div class="course-card border-0 shadow-sm">
+            <div class="position-relative">
+              <div class="course-thumbnail" style="height:140px">
+                {% if lesson.module.course.thumbnail %}<img src="{{ lesson.module.course.thumbnail.url }}" alt="{{ lesson.title }}">{% else %}<div class="course-thumb-placeholder"><i class="bi bi-play-circle-fill"></i></div>{% endif %}
+              </div>
+              <span class="badge bg-success position-absolute top-0 end-0 m-2">Free</span>
+            </div>
+            <div class="course-body">
+              <h6 class="course-title mb-1">{{ lesson.title }}</h6>
+              <p class="small text-muted mb-2"><i class="bi bi-journal-text me-1"></i>{{ lesson.module.course.title }}</p>
+              <div class="d-flex justify-content-between align-items-center">
+                <small class="text-primary fw-semibold">{{ lesson.module.course.educator.full_name }}</small>
+                <a href="{% url 'lesson_preview' lesson.pk %}" class="btn btn-primary btn-sm rounded-pill px-3">Watch Now</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if followed_educators %}
+      <h5 class="fw-bold mt-5 mb-3">My Favourite Educators</h5>
+      <div class="row g-3">
+        {% for follow in followed_educators %}
+        <div class="col-md-6 col-lg-4">
+          <div class="dash-card p-3 d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-3">
+              {% if follow.educator.avatar %}<img src="{{ follow.educator.avatar.url }}" class="rounded-circle" width="45" height="45" style="object-fit:cover">{% else %}<div class="avatar-sm" style="width:45px;height:45px">{{ follow.educator.full_name|first|upper }}</div>{% endif %}
+              <div>
+                <h6 class="mb-0 fw-bold small">{{ follow.educator.full_name }}</h6>
+                <small class="text-muted">{{ follow.educator.educator_profile.subjects|truncatechars:25 }}</small>
+              </div>
+            </div>
+            <a href="{% url 'educator_profile' follow.educator.educator_profile.unique_link %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-chevron-right"></i></a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

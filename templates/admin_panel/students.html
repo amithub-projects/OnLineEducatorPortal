@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Manage Students - Admin{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+{% block content %}
+<div class="dashboard-layout">
+  {% include 'admin_panel/sidebar.html' %}
+  <div class="dashboard-main">
+    <div class="dashboard-topbar"><h4 class="mb-0">Manage Students</h4><span class="badge bg-primary">{{ students.count }} total</span></div>
+    <div class="p-4">
+      <div class="dash-card">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light"><tr><th>Student</th><th>Phone</th><th>Enrolled Courses</th><th>Joined</th><th>Actions</th></tr></thead>
+            <tbody>
+              {% for student in students %}
+              <tr>
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    {% if student.avatar %}<img src="{{ student.avatar.url }}" class="rounded-circle" width="36" height="36" style="object-fit:cover">{% else %}<div class="avatar-xs">{{ student.full_name|first|upper }}</div>{% endif %}
+                    <div><span class="fw-semibold">{{ student.full_name }}</span><br><small class="text-muted">{{ student.email }}</small></div>
+                  </div>
+                </td>
+                <td>{{ student.phone|default:"-" }}</td>
+                <td>{{ student.enrollments.count }}</td>
+                <td><small>{{ student.date_joined|date:"d M Y" }}</small></td>
+                <td>
+                  <a href="{% url 'student_detail_admin' student.pk %}" class="btn btn-xs btn-outline-primary">View</a>
+                  <form method="post" action="{% url 'delete_user' student.pk %}" class="d-inline" onsubmit="return confirm('Delete this student?')">{% csrf_token %}<button class="btn btn-xs btn-outline-danger ms-1">Delete</button></form>
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="5" class="text-center py-4 text-muted">No students registered yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

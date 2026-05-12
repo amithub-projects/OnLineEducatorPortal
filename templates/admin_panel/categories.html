@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Categories - Admin{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+{% block content %}
+<div class="dashboard-layout">
+  {% include 'admin_panel/sidebar.html' %}
+  <div class="dashboard-main">
+    <div class="dashboard-topbar"><h4 class="mb-0">Course Categories</h4></div>
+    <div class="p-4"><div class="row g-4">
+      <div class="col-lg-4">
+        <div class="dash-card p-4">
+          <h5 class="fw-bold mb-3">Add Category</h5>
+          <form method="post">{% csrf_token %}
+            <div class="mb-3"><label class="form-label fw-semibold">Category Name</label><input type="text" name="name" class="form-control" required placeholder="e.g. Mathematics"></div>
+            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-plus me-1"></i>Add Category</button>
+          </form>
+        </div>
+      </div>
+      <div class="col-lg-8">
+        <div class="dash-card">
+          <div class="dash-card-header"><h5 class="mb-0">All Categories</h5></div>
+          <div class="p-3"><div class="row g-2">
+            {% for cat in categories %}
+            <div class="col-md-4">
+              <div class="p-3 border rounded-3 d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                  <div class="category-icon" style="width:36px;height:36px;font-size:1rem"><i class="bi bi-{{ cat.icon }}"></i></div>
+                  <span class="fw-semibold small">{{ cat.name }}</span>
+                </div>
+              </div>
+            </div>
+            {% empty %}<div class="col-12 text-center text-muted py-3">No categories yet.</div>{% endfor %}
+          </div></div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+</div>
+{% endblock %}

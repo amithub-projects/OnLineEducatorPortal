@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Contact Us - {{ site_settings.site_name }}{% endblock %}
+{% block content %}
+<section class="page-hero"><div class="container text-center"><h1>Contact Us</h1><p class="lead">We'd love to hear from you</p></div></section>
+<section class="section-padding">
+  <div class="container">
+    <div class="row g-5">
+      <div class="col-lg-5">
+        <h3 class="fw-bold mb-4">Get In Touch</h3>
+        {% if site_settings.contact_email %}<div class="d-flex gap-3 mb-4"><div class="stat-card-icon bg-primary-light rounded-3"><i class="bi bi-envelope text-primary fs-5"></i></div><div><h6 class="fw-bold mb-1">Email</h6><p class="text-muted mb-0">{{ site_settings.contact_email }}</p></div></div>{% endif %}
+        {% if site_settings.contact_phone %}<div class="d-flex gap-3 mb-4"><div class="stat-card-icon bg-success-subtle rounded-3"><i class="bi bi-telephone text-success fs-5"></i></div><div><h6 class="fw-bold mb-1">Phone</h6><p class="text-muted mb-0">{{ site_settings.contact_phone }}</p></div></div>{% endif %}
+        {% if site_settings.contact_address %}<div class="d-flex gap-3 mb-4"><div class="stat-card-icon bg-warning-subtle rounded-3"><i class="bi bi-geo-alt text-warning fs-5"></i></div><div><h6 class="fw-bold mb-1">Address</h6><p class="text-muted mb-0">{{ site_settings.contact_address }}</p></div></div>{% endif %}
+      </div>
+      <div class="col-lg-7">
+        <div class="p-4 rounded-3 border bg-white shadow-sm">
+          <form method="post">
+            {% csrf_token %}
+            <div class="row g-3">
+              <div class="col-md-6"><label class="form-label fw-semibold">Your Name</label><input type="text" name="name" class="form-control" required placeholder="Full Name"></div>
+              <div class="col-md-6"><label class="form-label fw-semibold">Email</label><input type="email" name="email" class="form-control" required placeholder="your@email.com"></div>
+              <div class="col-12"><label class="form-label fw-semibold">Subject</label><input type="text" name="subject" class="form-control" required placeholder="How can we help?"></div>
+              <div class="col-12"><label class="form-label fw-semibold">Message</label><textarea name="message" class="form-control" rows="5" required placeholder="Your message..."></textarea></div>
+              <div class="col-12"><button type="submit" class="btn btn-primary px-5"><i class="bi bi-send me-2"></i>Send Message</button></div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

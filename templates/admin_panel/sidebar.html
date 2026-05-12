@@ -1,0 +1,22 @@
+<nav class="dashboard-sidebar admin-sidebar">
+  <div class="sidebar-brand"><i class="bi bi-shield-fill"></i><span>Admin Panel</span></div>
+  <ul class="sidebar-nav">
+    <li class="sidebar-section">Overview</li>
+    <li><a href="{% url 'admin_dashboard' %}" class="sidebar-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a></li>
+    <li class="sidebar-section">Users</li>
+    <li><a href="{% url 'manage_educators' %}" class="sidebar-link"><i class="bi bi-person-badge"></i><span>Educators</span></a></li>
+    <li><a href="{% url 'manage_students' %}" class="sidebar-link"><i class="bi bi-people"></i><span>Students</span></a></li>
+    <li><a href="{% url 'create_educator_admin' %}" class="sidebar-link"><i class="bi bi-person-plus"></i><span>Add Educator</span></a></li>
+    <li class="sidebar-section">Content</li>
+    <li><a href="{% url 'manage_courses' %}" class="sidebar-link"><i class="bi bi-journal-richtext"></i><span>Courses</span></a></li>
+    <li><a href="{% url 'manage_categories' %}" class="sidebar-link"><i class="bi bi-grid"></i><span>Categories</span></a></li>
+    <li><a href="{% url 'monitor_live_sessions' %}" class="sidebar-link"><i class="bi bi-camera-video"></i><span>Live Sessions</span></a></li>
+    <li class="sidebar-section">Finance</li>
+    <li><a href="{% url 'manage_payments' %}" class="sidebar-link"><i class="bi bi-currency-rupee"></i><span>Payments</span></a></li>
+    <li class="sidebar-section">Settings</li>
+    <li><a href="{% url 'site_settings_admin' %}" class="sidebar-link"><i class="bi bi-gear"></i><span>Site Settings</span></a></li>
+    <li><a href="{% url 'announcements_admin' %}" class="sidebar-link"><i class="bi bi-megaphone"></i><span>Announcements</span></a></li>
+    <li><a href="{% url 'contact_messages' %}" class="sidebar-link"><i class="bi bi-envelope"></i><span>Messages</span></a></li>
+    <li><a href="{% url 'logout' %}" class="sidebar-link text-danger"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a></li>
+  </ul>
+</nav>

@@ -1,0 +1,257 @@
+{% extends 'base.html' %}
+{% block title %}Live Class: {{ session.title }}{% endblock %}
+{% block show_footer %}{% endblock %}
+
+{% block extra_css %}
+<style>
+.live-room { display:grid; grid-template-columns:1fr 320px; height:calc(100vh - 70px); background:#0a0a0f; }
+.video-area { display:flex; flex-direction:column; }
+.video-grid { flex:1; display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:8px; padding:12px; overflow:hidden; }
+.video-tile { position:relative; background:#1a1a2e; border-radius:12px; overflow:hidden; aspect-ratio:16/9; }
+.video-tile video { width:100%; height:100%; object-fit:cover; }
+.video-tile-label { position:absolute; bottom:8px; left:8px; background:rgba(0,0,0,.7); color:#fff; padding:2px 8px; border-radius:4px; font-size:12px; }
+.live-controls { padding:12px 20px; background:#111; display:flex; justify-content:center; align-items:center; gap:12px; }
+.ctrl-btn { width:48px; height:48px; border-radius:50%; border:none; cursor:pointer; transition:.2s; display:flex; align-items:center; justify-content:center; font-size:18px; }
+.ctrl-btn.active { background:#2d3748; color:#fff; }
+.ctrl-btn.active:hover { background:#4a5568; }
+.ctrl-btn.danger { background:#e53e3e; color:#fff; }
+.ctrl-btn.danger:hover { background:#c53030; }
+.chat-panel { background:#111; border-left:1px solid #222; display:flex; flex-direction:column; }
+.chat-header { padding:16px; border-bottom:1px solid #222; color:#fff; font-weight:600; }
+.chat-messages { flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px; }
+.chat-msg { background:#1a1a2e; border-radius:8px; padding:8px 12px; color:#e2e8f0; font-size:13px; }
+.chat-msg .msg-sender { color:#7c3aed; font-weight:600; font-size:11px; }
+.chat-msg.system { background:#1a2a1a; color:#68d391; text-align:center; font-style:italic; }
+.chat-input-area { padding:12px; border-top:1px solid #222; display:flex; gap:8px; }
+.chat-input-area input { flex:1; background:#1a1a2e; border:1px solid #333; color:#fff; border-radius:8px; padding:8px 12px; font-size:13px; }
+.chat-input-area button { background:#7c3aed; border:none; color:#fff; border-radius:8px; padding:8px 14px; cursor:pointer; }
+.live-badge { background:#e53e3e; color:#fff; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:700; animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="live-room">
+    <!-- Video Area -->
+    <div class="video-area">
+        <div class="p-3 d-flex align-items-center justify-content-between border-bottom" style="background:#111;border-color:#222!important">
+            <div class="d-flex align-items-center gap-3">
+                <span class="live-badge"><i class="bi bi-record-circle-fill me-1"></i>LIVE</span>
+                <span class="text-white fw-semibold">{{ session.title }}</span>
+                <span class="text-muted small" id="participantCount"><i class="bi bi-people me-1"></i><span id="pCount">1</span> participants</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="text-muted small">Room: <code class="text-warning">{{ room_code }}</code></span>
+                {% if is_educator %}
+                <form method="post" action="{% url 'end_live_session' session.pk %}" class="mb-0">
+                    {% csrf_token %}
+                    <button class="btn btn-danger btn-sm">End Session</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="video-grid" id="videoGrid">
+            <!-- Local video -->
+            <div class="video-tile" id="localTile">
+                <video id="localVideo" autoplay muted playsinline></video>
+                <span class="video-tile-label"><i class="bi bi-person-fill me-1"></i>You</span>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="live-controls">
+            <button class="ctrl-btn active" id="micBtn" onclick="toggleMic()" title="Toggle Mic">
+                <i class="bi bi-mic-fill" id="micIcon"></i>
+            </button>
+            <button class="ctrl-btn active" id="camBtn" onclick="toggleCam()" title="Toggle Camera">
+                <i class="bi bi-camera-video-fill" id="camIcon"></i>
+            </button>
+            <button class="ctrl-btn active" onclick="toggleScreenShare()" title="Share Screen">
+                <i class="bi bi-display" id="screenIcon"></i>
+            </button>
+            <button class="ctrl-btn danger" onclick="leaveSession()" title="Leave">
+                <i class="bi bi-telephone-x-fill"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Chat Panel -->
+    <div class="chat-panel">
+        <div class="chat-header">
+            <i class="bi bi-chat-dots-fill me-2 text-primary"></i>Live Chat
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="chat-msg system">Welcome to {{ session.title }}! Chat is live.</div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="chatInput" placeholder="Type a message..." onkeypress="if(event.key==='Enter')sendChat()">
+            <button onclick="sendChat()"><i class="bi bi-send-fill"></i></button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const ROOM_CODE = "{{ room_code }}";
+const MY_NAME = "{{ request.user.full_name }}";
+const MY_ID = "{{ request.user.pk }}";
+const IS_EDUCATOR = {{ is_educator|lower }};
+const WS_URL = `ws://${window.location.host}/ws/live/${ROOM_CODE}/`;
+
+let localStream, ws, peerConnections = {};
+let micOn = true, camOn = true;
+
+const iceServers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+
+async function init() {
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        document.getElementById('localVideo').srcObject = localStream;
+        connectWS();
+    } catch (e) {
+        appendSystemMsg('Could not access camera/mic. Check permissions.');
+        connectWS();
+    }
+}
+
+function connectWS() {
+    ws = new WebSocket(WS_URL);
+    ws.onopen = () => appendSystemMsg('Connected to live session');
+    ws.onclose = () => appendSystemMsg('Disconnected from session');
+    ws.onmessage = async (ev) => {
+        const data = JSON.parse(ev.data);
+        if (data.type === 'participant_joined' && data.user_id !== MY_ID) {
+            appendSystemMsg(`${data.user_name} joined`);
+            document.getElementById('pCount').textContent = parseInt(document.getElementById('pCount').textContent) + 1;
+            if (localStream) await callPeer(data.user_id);
+        } else if (data.type === 'participant_left') {
+            appendSystemMsg(`${data.user_name} left`);
+            if (peerConnections[data.user_id]) {
+                peerConnections[data.user_id].close();
+                delete peerConnections[data.user_id];
+                const vid = document.getElementById('video_' + data.user_id);
+                if (vid) vid.closest('.video-tile').remove();
+            }
+        } else if (data.type === 'offer' && data.target_id === MY_ID) {
+            await handleOffer(data);
+        } else if (data.type === 'answer' && data.target_id === MY_ID) {
+            await peerConnections[data.sender_id]?.setRemoteDescription(data.sdp);
+        } else if (data.type === 'ice-candidate' && data.target_id === MY_ID) {
+            await peerConnections[data.sender_id]?.addIceCandidate(data.candidate);
+        } else if (data.type === 'chat') {
+            appendChatMsg(data.sender_name, data.content, data.sender_id === MY_ID);
+        }
+    };
+}
+
+async function callPeer(peerId) {
+    const pc = createPC(peerId);
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    ws.send(JSON.stringify({ type: 'offer', sdp: offer, target_id: peerId }));
+}
+
+async function handleOffer(data) {
+    const pc = createPC(data.sender_id);
+    await pc.setRemoteDescription(data.sdp);
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    ws.send(JSON.stringify({ type: 'answer', sdp: answer, target_id: data.sender_id }));
+}
+
+function createPC(peerId) {
+    const pc = new RTCPeerConnection(iceServers);
+    peerConnections[peerId] = pc;
+    if (localStream) localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+    pc.onicecandidate = e => {
+        if (e.candidate) ws.send(JSON.stringify({ type: 'ice-candidate', candidate: e.candidate, target_id: peerId }));
+    };
+    pc.ontrack = e => addRemoteVideo(peerId, e.streams[0]);
+    return pc;
+}
+
+function addRemoteVideo(peerId, stream) {
+    let tile = document.getElementById('tile_' + peerId);
+    if (!tile) {
+        tile = document.createElement('div');
+        tile.className = 'video-tile';
+        tile.id = 'tile_' + peerId;
+        tile.innerHTML = `<video id="video_${peerId}" autoplay playsinline></video><span class="video-tile-label">Participant</span>`;
+        document.getElementById('videoGrid').appendChild(tile);
+    }
+    document.getElementById('video_' + peerId).srcObject = stream;
+}
+
+function toggleMic() {
+    if (!localStream) return;
+    micOn = !micOn;
+    localStream.getAudioTracks().forEach(t => t.enabled = micOn);
+    document.getElementById('micIcon').className = micOn ? 'bi bi-mic-fill' : 'bi bi-mic-mute-fill';
+    document.getElementById('micBtn').classList.toggle('active', micOn);
+}
+
+function toggleCam() {
+    if (!localStream) return;
+    camOn = !camOn;
+    localStream.getVideoTracks().forEach(t => t.enabled = camOn);
+    document.getElementById('camIcon').className = camOn ? 'bi bi-camera-video-fill' : 'bi bi-camera-video-off-fill';
+}
+
+async function toggleScreenShare() {
+    try {
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        const screenTrack = screenStream.getVideoTracks()[0];
+        Object.values(peerConnections).forEach(pc => {
+            const sender = pc.getSenders().find(s => s.track?.kind === 'video');
+            if (sender) sender.replaceTrack(screenTrack);
+        });
+        document.getElementById('localVideo').srcObject = screenStream;
+        screenTrack.onended = () => {
+            Object.values(peerConnections).forEach(pc => {
+                const sender = pc.getSenders().find(s => s.track?.kind === 'video');
+                if (sender && localStream) sender.replaceTrack(localStream.getVideoTracks()[0]);
+            });
+            document.getElementById('localVideo').srcObject = localStream;
+        };
+    } catch (e) { appendSystemMsg('Screen sharing cancelled or not supported.'); }
+}
+
+function sendChat() {
+    const inp = document.getElementById('chatInput');
+    const msg = inp.value.trim();
+    if (msg && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'chat', content: msg }));
+        inp.value = '';
+    }
+}
+
+function appendChatMsg(sender, content, isMe) {
+    const el = document.createElement('div');
+    el.className = 'chat-msg' + (isMe ? ' border-primary' : '');
+    el.innerHTML = `<div class="msg-sender">${sender}</div>${content}`;
+    const container = document.getElementById('chatMessages');
+    container.appendChild(el);
+    container.scrollTop = container.scrollHeight;
+}
+
+function appendSystemMsg(msg) {
+    const el = document.createElement('div');
+    el.className = 'chat-msg system';
+    el.textContent = msg;
+    const container = document.getElementById('chatMessages');
+    container.appendChild(el);
+    container.scrollTop = container.scrollHeight;
+}
+
+function leaveSession() {
+    Object.values(peerConnections).forEach(pc => pc.close());
+    if (localStream) localStream.getTracks().forEach(t => t.stop());
+    if (ws) ws.close();
+    window.location.href = '/educator/live/';
+}
+
+init();
+</script>
+{% endblock %}

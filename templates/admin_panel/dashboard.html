@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard - {{ site_settings.site_name }}{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+{% block content %}
+<div class="dashboard-layout">
+    <!-- Admin Sidebar -->
+    <nav class="dashboard-sidebar admin-sidebar">
+        <div class="sidebar-brand">
+            <i class="bi bi-shield-fill"></i><span>Admin Panel</span>
+        </div>
+        <ul class="sidebar-nav">
+            <li class="sidebar-section">Overview</li>
+            <li><a href="{% url 'admin_dashboard' %}" class="sidebar-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a></li>
+
+            <li class="sidebar-section">Users</li>
+            <li><a href="{% url 'manage_educators' %}" class="sidebar-link"><i class="bi bi-person-badge"></i><span>Educators</span></a></li>
+            <li><a href="{% url 'manage_students' %}" class="sidebar-link"><i class="bi bi-people"></i><span>Students</span></a></li>
+            <li><a href="{% url 'create_educator_admin' %}" class="sidebar-link"><i class="bi bi-person-plus"></i><span>Add Educator</span></a></li>
+
+            <li class="sidebar-section">Content</li>
+            <li><a href="{% url 'manage_courses' %}" class="sidebar-link"><i class="bi bi-journal-richtext"></i><span>Courses</span></a></li>
+            <li><a href="{% url 'manage_categories' %}" class="sidebar-link"><i class="bi bi-grid"></i><span>Categories</span></a></li>
+            <li><a href="{% url 'monitor_live_sessions' %}" class="sidebar-link"><i class="bi bi-camera-video"></i><span>Live Sessions</span></a></li>
+
+            <li class="sidebar-section">Finance</li>
+            <li><a href="{% url 'manage_payments' %}" class="sidebar-link"><i class="bi bi-currency-rupee"></i><span>Payments</span></a></li>
+
+            <li class="sidebar-section">Settings</li>
+            <li><a href="{% url 'site_settings_admin' %}" class="sidebar-link"><i class="bi bi-gear"></i><span>Site Settings</span></a></li>
+            <li><a href="{% url 'announcements_admin' %}" class="sidebar-link"><i class="bi bi-megaphone"></i><span>Announcements</span></a></li>
+            <li><a href="{% url 'contact_messages' %}" class="sidebar-link">
+                <i class="bi bi-envelope"></i><span>Messages
+                {% if unread_messages %}<span class="badge bg-danger ms-1">{{ unread_messages }}</span>{% endif %}
+                </span>
+            </a></li>
+            <li><a href="{% url 'logout' %}" class="sidebar-link text-danger"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a></li>
+        </ul>
+    </nav>
+
+    <!-- Admin Main -->
+    <div class="dashboard-main">
+        <div class="dashboard-topbar">
+            <div>
+                <h4 class="mb-0">Admin Dashboard</h4>
+                <small class="text-muted">Full platform overview</small>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{% url 'create_educator_admin' %}" class="btn btn-primary btn-sm"><i class="bi bi-person-plus me-1"></i>Add Educator</a>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="row g-4 mb-4">
+            <div class="col-6 col-xl-3">
+                <div class="stat-card stat-card-blue">
+                    <div class="stat-card-icon"><i class="bi bi-person-badge"></i></div>
+                    <div class="stat-card-content">
+                        <span class="stat-card-number">{{ total_educators }}</span>
+                        <span class="stat-card-label">Educators</span>
+                        {% if pending_educators %}<span class="badge bg-warning text-dark">{{ pending_educators }} Pending</span>{% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="stat-card stat-card-purple">
+                    <div class="stat-card-icon"><i class="bi bi-people"></i></div>
+                    <div class="stat-card-content">
+                        <span class="stat-card-number">{{ total_students }}</span>
+                        <span class="stat-card-label">Students</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="stat-card stat-card-green">
+                    <div class="stat-card-icon"><i class="bi bi-currency-rupee"></i></div>
+                    <div class="stat-card-content">
+                        <span class="stat-card-number">₹{{ total_revenue|floatformat:0 }}</span>
+                        <span class="stat-card-label">Revenue</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="stat-card stat-card-red">
+                    <div class="stat-card-icon"><i class="bi bi-camera-video-fill"></i></div>
+                    <div class="stat-card-content">
+                        <span class="stat-card-number">{{ active_live }}</span>
+                        <span class="stat-card-label">Live Sessions</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Recent Users -->
+            <div class="col-lg-7">
+                <div class="dash-card">
+                    <div class="dash-card-header">
+                        <h5 class="mb-0">Recent Users</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead><tr><th>User</th><th>Role</th><th>Status</th><th>Joined</th><th>Action</th></tr></thead>
+                            <tbody>
+                                {% for u in recent_users %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="avatar-xs">{{ u.full_name|first|upper }}</div>
+                                            <div>
+                                                <span class="fw-semibold">{{ u.full_name }}</span><br>
+                                                <small class="text-muted">{{ u.email }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge {% if u.role == 'educator' %}bg-primary{% elif u.role == 'admin' %}bg-danger{% else %}bg-success{% endif %}">{{ u.role|capfirst }}</span></td>
+                                    <td>
+                                        {% if u.is_approved %}<span class="badge bg-success">Active</span>
+                                        {% else %}<span class="badge bg-warning text-dark">Pending</span>{% endif %}
+                                    </td>
+                                    <td><small>{{ u.date_joined|date:"d M Y" }}</small></td>
+                                    <td>
+                                        {% if u.role == 'educator' and not u.is_approved %}
+                                        <a href="{% url 'approve_educator' u.pk %}" class="btn btn-xs btn-success">Approve</a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Payments -->
+            <div class="col-lg-5">
+                <div class="dash-card">
+                    <div class="dash-card-header">
+                        <h5 class="mb-0">Recent Payments</h5>
+                        <a href="{% url 'manage_payments' %}" class="btn btn-sm btn-outline-secondary">View All</a>
+                    </div>
+                    {% for payment in recent_payments %}
+                    <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
+                        <div>
+                            <span class="fw-semibold small">{{ payment.student.full_name }}</span><br>
+                            <small class="text-muted">{{ payment.course.title|truncatechars:25 }}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="text-success fw-bold">₹{{ payment.amount }}</span><br>
+                            <small class="text-muted">{{ payment.created_at|date:"d M" }}</small>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted text-center p-3">No payments yet</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

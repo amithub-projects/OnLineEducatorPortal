@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}About Us - {{ site_settings.site_name }}{% endblock %}
+{% block content %}
+<section class="page-hero">
+  <div class="container text-center">
+    <h1>About Us</h1>
+    <p class="lead">Empowering learners and educators worldwide</p>
+  </div>
+</section>
+<section class="section-padding">
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-6">
+        <span class="section-badge">Our Mission</span>
+        <h2 class="section-title mt-2">Transforming Education Through Technology</h2>
+        <p class="text-muted mt-3">{{ site.about_content|default:"We connect passionate educators with eager learners worldwide. Our platform makes quality education accessible, interactive, and effective through cutting-edge technology including live video classes, real-time collaboration, and personalized learning paths." }}</p>
+        <div class="row g-3 mt-3">
+          <div class="col-6"><div class="p-3 rounded-3 border text-center"><h3 class="text-primary fw-bold">500+</h3><p class="text-muted mb-0 small">Expert Educators</p></div></div>
+          <div class="col-6"><div class="p-3 rounded-3 border text-center"><h3 class="text-primary fw-bold">10K+</h3><p class="text-muted mb-0 small">Happy Students</p></div></div>
+          <div class="col-6"><div class="p-3 rounded-3 border text-center"><h3 class="text-primary fw-bold">1000+</h3><p class="text-muted mb-0 small">Courses</p></div></div>
+          <div class="col-6"><div class="p-3 rounded-3 border text-center"><h3 class="text-primary fw-bold">99%</h3><p class="text-muted mb-0 small">Satisfaction Rate</p></div></div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="row g-3">
+          <div class="col-6">
+            <div class="p-4 rounded-3 border h-100 text-center">
+              <i class="bi bi-check-circle-fill text-success fs-4 mb-2"></i>
+              <p class="mb-0 fw-semibold">Live Classes</p>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="p-4 rounded-3 border h-100 text-center">
+              <i class="bi bi-check-circle-fill text-success fs-4 mb-2"></i>
+              <p class="mb-0 fw-semibold">Smart Matching</p>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="p-4 rounded-3 border h-100 text-center">
+              <i class="bi bi-check-circle-fill text-success fs-4 mb-2"></i>
+              <p class="mb-0 fw-semibold">Secure Payments</p>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="p-4 rounded-3 border h-100 text-center">
+              <i class="bi bi-check-circle-fill text-success fs-4 mb-2"></i>
+              <p class="mb-0 fw-semibold">24/7 Support</p>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="p-4 rounded-3 border h-100 text-center">
+              <i class="bi bi-check-circle-fill text-success fs-4 mb-2"></i>
+              <p class="mb-0 fw-semibold">Flexible Learning</p>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="p-4 rounded-3 border h-100 text-center">
+              <i class="bi bi-check-circle-fill text-success fs-4 mb-2"></i>
+              <p class="mb-0 fw-semibold">Verified Educators</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

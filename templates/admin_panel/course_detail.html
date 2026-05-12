@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}{{ course.title }} - Admin View{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+{% block content %}
+<div class="dashboard-layout">
+  {% include 'admin_panel/sidebar.html' %}
+  <div class="dashboard-main">
+    <div class="dashboard-topbar">
+      <div>
+        <h4 class="mb-0">{{ course.title }}</h4>
+        <small class="text-muted">Educator: {{ course.educator.full_name }}</small>
+      </div>
+      <a href="{% url 'manage_courses' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back</a>
+    </div>
+    <div class="p-4">
+      <div class="row g-4">
+        <div class="col-lg-8">
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <h5 class="mb-0">Course Content & Videos</h5>
+            </div>
+            <div class="p-3">
+              {% for module in modules %}
+              <div class="border rounded-3 mb-3 overflow-hidden">
+                <div class="d-flex justify-content-between p-3 bg-light fw-bold">
+                  <span>{{ forloop.counter }}. {{ module.title }}</span>
+                  <span class="badge bg-primary">{{ module.lessons.count }} lessons</span>
+                </div>
+                {% for lesson in module.lessons.all %}
+                <div class="d-flex align-items-center justify-content-between p-3 border-top">
+                  <div class="d-flex align-items-center gap-3 flex-fill">
+                    <i class="bi bi-{% if lesson.video_file or lesson.video_url %}play-circle-fill text-primary{% else %}file-earmark text-muted{% endif %} fs-5"></i>
+                    <div>
+                      <span class="d-block fw-semibold">{{ lesson.title }}</span>
+                      {% if lesson.video_url %}
+                      <small class="text-muted"><i class="bi bi-youtube text-danger me-1"></i><a href="{{ lesson.video_url }}" target="_blank">YouTube Video Linked</a></small>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="d-flex gap-2 align-items-center">
+                    <span class="text-muted small me-2">{{ lesson.duration_minutes }} min</span>
+                    <form method="post" action="{% url 'admin_delete_lesson' lesson.pk %}" onsubmit="return confirm('Are you sure you want to remove this video/lesson? This action cannot be undone.')">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove Video/Lesson"><i class="bi bi-trash"></i> Remove</button>
+                    </form>
+                  </div>
+                </div>
+                {% empty %}
+                <p class="text-muted p-3 mb-0 small">No lessons or videos in this module.</p>
+                {% endfor %}
+              </div>
+              {% empty %}
+              <p class="text-muted text-center p-4">The educator has not added any modules yet.</p>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-4">
+          <div class="dash-card p-4">
+            <h5 class="fw-bold mb-3">Course Overview</h5>
+            <div class="d-flex gap-2 mb-3 flex-wrap">
+              <span class="badge bg-primary">{{ course.get_level_display }}</span>
+              <span class="badge bg-success">{% if course.is_free %}Free{% else %}₹{{ course.price }}{% endif %}</span>
+              <span class="badge {% if course.is_published %}bg-info{% else %}bg-secondary{% endif %}">{% if course.is_published %}Published{% else %}Draft{% endif %}</span>
+            </div>
+            <p class="text-muted small">{{ course.description }}</p>
+            <hr>
+            <div class="d-flex justify-content-between mb-2">
+              <span class="text-muted small">Total Enrollments:</span>
+              <span class="fw-bold">{{ course.get_enrolled_count }}</span>
+            </div>
+            <div class="d-flex justify-content-between">
+              <span class="text-muted small">Created On:</span>
+              <span class="fw-bold">{{ course.created_at|date:"d M Y" }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

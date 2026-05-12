@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}{{ educator.full_name }} - Educator Profile{% endblock %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <div class="d-flex align-items-center gap-4 flex-wrap">
+      {% if educator.avatar %}<img src="{{ educator.avatar.url }}" class="rounded-circle border border-4 border-white" width="100" height="100" style="object-fit:cover">{% else %}<div class="educator-avatar-placeholder" style="width:100px;height:100px;font-size:2.5rem">{{ educator.full_name|first|upper }}</div>{% endif %}
+      <div class="flex-fill">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <h1 class="mb-0">{{ educator.full_name }}</h1>
+          {% if user.is_authenticated and user.role == 'student' %}
+          <a href="{% url 'toggle_follow' educator.pk %}" class="btn {% if is_following %}btn-outline-light{% else %}btn-light text-primary{% endif %} btn-sm px-4">
+            <i class="bi bi-{% if is_following %}person-dash{% else %}person-plus{% endif %} me-1"></i>
+            {% if is_following %}Unfollow{% else %}Follow{% endif %}
+          </a>
+          {% endif %}
+        </div>
+        {% if profile %}<p class="lead mb-0 opacity-75">{{ profile.subjects }}</p>{% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+<section class="section-padding">
+  <div class="container">
+    <div class="row g-5">
+      <div class="col-lg-8">
+        {% if profile %}
+        <div class="dash-card mb-4 p-4">
+          <h4 class="fw-bold mb-3">About</h4>
+          <p class="text-muted">{{ profile.bio|default:"No bio provided." }}</p>
+          <div class="row g-3 mt-2">
+            <div class="col-4 text-center"><div class="fw-bold fs-4 text-primary">{{ profile.experience_years }}</div><small class="text-muted">Years Exp.</small></div>
+            <div class="col-4 text-center"><div class="fw-bold fs-4 text-primary">{{ profile.rating }}</div><small class="text-muted">Rating</small></div>
+            <div class="col-4 text-center"><div class="fw-bold fs-4 text-primary">{{ courses.count }}</div><small class="text-muted">Courses</small></div>
+          </div>
+        </div>
+        {% endif %}
+        <h4 class="fw-bold mb-3">Available Courses</h4>
+        <div class="row g-3">
+          {% for course in courses %}
+          <div class="col-md-6">
+            <div class="course-card">
+              <div class="course-thumbnail" style="height:130px">{% if course.thumbnail %}<img src="{{ course.thumbnail.url }}" alt="{{ course.title }}">{% else %}<div class="course-thumb-placeholder"><i class="bi bi-play-circle-fill"></i></div>{% endif %}</div>
+              <div class="course-body">
+                <h6 class="course-title">{{ course.title }}</h6>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="course-price">{% if course.is_free %}Free{% else %}₹{{ course.price }}{% endif %}</span>
+                  <div class="d-flex gap-1">
+                    <a href="{% url 'course_public_detail' course.slug %}" class="btn btn-outline-primary btn-sm">Details</a>
+                    <a href="{% url 'enroll_course' course.slug %}" class="btn btn-primary btn-sm">Enroll</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% empty %}<div class="col-12"><p class="text-muted">No courses published yet.</p></div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="dash-card p-4">
+          <h5 class="fw-bold mb-3">Connect</h5>
+          {% if user.is_authenticated and user.role == 'student' %}
+          <a href="{% url 'private_messages' educator.pk %}" class="btn btn-primary w-100 mb-2"><i class="bi bi-chat me-2"></i>Send Message</a>
+          {% endif %}
+          {% if profile %}
+          {% if profile.qualification %}<p class="mb-2"><i class="bi bi-award text-primary me-2"></i><strong>Qualification:</strong> {{ profile.qualification }}</p>{% endif %}
+          {% if profile.website %}<p class="mb-2"><i class="bi bi-globe text-primary me-2"></i><a href="{{ profile.website }}" target="_blank">Website</a></p>{% endif %}
+          {% if profile.linkedin %}<p class="mb-2"><i class="bi bi-linkedin text-primary me-2"></i><a href="{{ profile.linkedin }}" target="_blank">LinkedIn</a></p>{% endif %}
+          <hr>
+          <p class="mb-1"><strong>Hourly Rate:</strong> {% if profile.hourly_rate %}₹{{ profile.hourly_rate }}/hr{% else %}Contact for pricing{% endif %}</p>
+          <p class="mb-0 small text-muted">Share this profile:<br><code>{{ request.build_absolute_uri }}</code></p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

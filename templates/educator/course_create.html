@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Create Course - Educator{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+{% block content %}
+<div class="dashboard-layout">
+  {% include 'educator/sidebar.html' %}
+  <div class="dashboard-main">
+    <div class="dashboard-topbar"><h4 class="mb-0">Create New Course</h4></div>
+    <div class="p-4"><div class="row justify-content-center"><div class="col-lg-8">
+      <div class="dash-card p-4">
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-12"><label class="form-label fw-semibold">Course Title *</label><input type="text" name="title" class="form-control" placeholder="e.g. Complete Python Bootcamp" required></div>
+            <div class="col-md-6"><label class="form-label fw-semibold">Price (₹)</label><input type="number" name="price" class="form-control" placeholder="0" min="0" step="0.01"></div>
+            <div class="col-md-6"><label class="form-label fw-semibold">Duration (hours)</label><input type="number" name="duration_hours" class="form-control" placeholder="0" min="0"></div>
+            <div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" name="is_free" id="isFree"><label class="form-check-label" for="isFree">This is a free course</label></div></div>
+            <div class="col-12"><label class="form-label fw-semibold">Description *</label><textarea name="description" class="form-control" rows="4" placeholder="Describe what students will learn..." required></textarea></div>
+            <div class="col-12"><label class="form-label fw-semibold">Course Thumbnail</label><input type="file" name="thumbnail" class="form-control" accept="image/*"></div>
+          </div>
+          <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary px-5"><i class="bi bi-plus-circle me-2"></i>Create Course</button>
+            <a href="{% url 'course_list' %}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div></div></div>
+  </div>
+</div>
+{% endblock %}
