@@ -60,6 +60,24 @@ def contact(request):
     return render(request, 'public/contact.html')
 
 
+def select_course(request, category_slug):
+    category = get_object_or_404(Category, slug=category_slug)
+    if request.user.is_authenticated:
+        if request.user.role == 'student':
+            request.user.selected_category = category
+            request.user.save()
+            messages.success(request, f'Selected course: {category.name}')
+            return redirect('student_dashboard')
+        else:
+            messages.info(request, 'Selection saved. Only students see filtered content.')
+            return redirect('home')
+    else:
+        # Store in session for later
+        request.session['selected_category_id'] = category.id
+        messages.info(request, f'Selected course: {category.name}. Please login or register to continue.')
+        return redirect('register_student')
+
+
 def educator_listing(request):
     educators = User.objects.filter(
         role='educator', is_approved=True, is_active=True
@@ -76,13 +94,17 @@ def educator_listing(request):
             Q(educator_profile__subjects__icontains=search_q) |
             Q(educator_profile__bio__icontains=search_q)
         )
-    if subject_filter:
-        educators = educators.filter(educator_profile__subjects__icontains=subject_filter)
-    if experience_filter:
-        try:
-            educators = educators.filter(educator_profile__experience_years__gte=int(experience_filter))
-        except (ValueError, TypeError):
-            pass
+    if category_filter:
+        educators = educators.filter(educator_profile__primary_category__slug=category_filter)
+    
+    # Enforce student's selected category if logged in
+    if request.user.is_authenticated and request.user.role == 'student':
+        student_cat = request.user.selected_category
+        if student_cat:
+            educators = educators.filter(
+                Q(educator_profile__primary_category=student_cat) |
+                Q(courses__category=student_cat)
+            ).distinct()
 
     categories = Category.objects.all()
     return render(request, 'public/educator_listing.html', {
@@ -115,9 +137,32 @@ def student_dashboard(request):
     if not request.user.is_authenticated or request.user.role != 'student':
         return redirect('login')
     student = request.user
+    selected_cat = student.selected_category
+
     enrollments = Enrollment.objects.filter(student=student).select_related('course', 'course__educator')
     followed_educators = Follower.objects.filter(student=student).select_related('educator', 'educator__educator_profile')
     
+    # Filtered Educators based on Category
+    recommended_educators = User.objects.filter(
+        role='educator', is_approved=True, is_active=True
+    ).select_related('educator_profile')
+    
+    if selected_cat:
+        # Strict filtering: Only educators in this category or with courses in this category
+        recommended_educators = recommended_educators.filter(
+            Q(educator_profile__primary_category=selected_cat) |
+            Q(courses__category=selected_cat)
+        ).distinct()
+    else:
+        recommended_educators = recommended_educators[:6]
+
+    # Course Announcements
+    course_announcements = Announcement.objects.filter(is_active=True).order_by('-created_at')
+    if selected_cat:
+        course_announcements = course_announcements.filter(Q(category=selected_cat) | Q(category__isnull=True))
+    else:
+        course_announcements = course_announcements.filter(category__isnull=True)
+
     followed_educator_ids = followed_educators.values_list('educator_id', flat=True)
     free_lessons = Lesson.objects.filter(
         module__course__educator_id__in=followed_educator_ids,
@@ -130,4 +175,7 @@ def student_dashboard(request):
         'student': student,
         'followed_educators': followed_educators,
         'free_lessons': free_lessons,
+        'recommended_educators': recommended_educators[:6],
+        'course_announcements': course_announcements[:5],
+        'selected_cat': selected_cat,
     })

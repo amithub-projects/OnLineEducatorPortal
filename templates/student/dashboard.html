@@ -22,15 +22,81 @@
   </nav>
   <div class="dashboard-main">
     <div class="dashboard-topbar">
-      <div><h4 class="mb-0">Welcome, {{ student.full_name }}! 🎓</h4><small class="text-muted">Continue your learning journey</small></div>
+      <div>
+        <h4 class="mb-0">Welcome, {{ student.full_name }}! 🎓</h4>
+        {% if selected_cat %}
+          <span class="badge bg-soft-primary text-primary mt-1"><i class="bi bi-book me-1"></i> {{ selected_cat.name }} Path</span>
+        {% else %}
+          <small class="text-muted">Continue your learning journey</small>
+        {% endif %}
+      </div>
       <a href="{% url 'educator_listing' %}" class="btn btn-primary btn-sm"><i class="bi bi-search me-1"></i>Find More Courses</a>
     </div>
     <div class="p-4">
+      <!-- Course Announcements -->
+      {% if course_announcements %}
+      <div class="alert alert-primary border-0 shadow-sm mb-4">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <i class="bi bi-megaphone-fill fs-5"></i>
+          <h6 class="mb-0 fw-bold">Course Announcements & Updates</h6>
+        </div>
+        <div class="announcement-list">
+          {% for ann in course_announcements %}
+          <div class="ann-item p-2 border-bottom border-white border-opacity-25">
+            <div class="d-flex justify-content-between align-items-start">
+              <span class="fw-bold small">{{ ann.title }}</span>
+              <small class="text-muted opacity-75">{{ ann.created_at|date:"M d, Y" }}</small>
+            </div>
+            <p class="small mb-0 opacity-75">{{ ann.content }}</p>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
       <div class="row g-4 mb-4">
         <div class="col-md-4"><div class="stat-card stat-card-blue"><div class="stat-card-icon"><i class="bi bi-journal-check"></i></div><div class="stat-card-content"><span class="stat-card-number">{{ enrollments.count }}</span><span class="stat-card-label">Enrolled Courses</span></div></div></div>
         <div class="col-md-4"><div class="stat-card stat-card-green"><div class="stat-card-icon"><i class="bi bi-check2-circle"></i></div><div class="stat-card-content"><span class="stat-card-number">0</span><span class="stat-card-label">Completed</span></div></div></div>
-        <div class="col-md-4"><div class="stat-card stat-card-purple"><div class="stat-card-icon"><i class="bi bi-camera-video"></i></div><div class="stat-card-content"><span class="stat-card-number">-</span><span class="stat-card-label">Live Classes</span></div></div></div>
+        <div class="col-md-4">
+          <div class="stat-card stat-card-purple">
+            <div class="stat-card-icon"><i class="bi bi-mortarboard"></i></div>
+            <div class="stat-card-content">
+              <span class="stat-card-number">
+                {% if selected_cat %}{{ selected_cat.name|truncatechars:10 }}{% else %}-{% endif %}
+              </span>
+              <span class="stat-card-label">Selected Path</span>
+            </div>
+          </div>
+        </div>
       </div>
+
+      <!-- Recommended Educators -->
+      {% if recommended_educators %}
+      <div class="d-flex justify-content-between align-items-center mb-3 mt-5">
+        <h5 class="fw-bold mb-0">Recommended for Your Path</h5>
+        <a href="{% url 'educator_listing' %}{% if selected_cat %}?category={{ selected_cat.slug }}{% endif %}" class="small text-decoration-none">View All <i class="bi bi-arrow-right"></i></a>
+      </div>
+      <div class="row g-3">
+        {% for educator in recommended_educators %}
+        <div class="col-md-6 col-lg-4">
+          <div class="educator-mini-card p-3 bg-white rounded shadow-sm border-start border-4 border-primary">
+            <div class="d-flex align-items-center gap-3">
+              {% if educator.avatar %}
+                <img src="{{ educator.avatar.url }}" class="rounded-circle" width="45" height="45" style="object-fit:cover">
+              {% else %}
+                <div class="avatar-sm" style="width:45px;height:45px">{{ educator.full_name|first|upper }}</div>
+              {% endif %}
+              <div class="flex-grow-1">
+                <h6 class="mb-0 fw-bold small">{{ educator.full_name }}</h6>
+                <small class="text-muted d-block">{{ educator.educator_profile.institute_name|default:educator.educator_profile.subjects|truncatechars:25 }}</small>
+              </div>
+              <a href="{% url 'educator_profile' educator.educator_profile.unique_link %}" class="btn btn-sm btn-link p-0 text-primary"><i class="bi bi-arrow-right-circle fs-5"></i></a>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
       <h5 class="fw-bold mb-3">My Enrolled Courses</h5>
       <div class="row g-4">
         {% for enrollment in enrollments %}

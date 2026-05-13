@@ -52,7 +52,10 @@ def admin_dashboard(request):
 
 @admin_required
 def manage_educators(request):
-    educators = User.objects.filter(role='educator').select_related('educator_profile').order_by('-date_joined')
+    educators = User.objects.filter(role='educator').select_related(
+        'educator_profile', 
+        'educator_profile__primary_category'
+    ).order_by('-date_joined')
     return render(request, 'admin_panel/educators.html', {'educators': educators})
 
 
@@ -192,15 +195,27 @@ def site_settings_admin(request):
 
 @admin_required
 def announcements_admin(request):
-    announcements = Announcement.objects.all().order_by('-created_at')
+    announcements = Announcement.objects.all().select_related('category').order_by('-created_at')
+    categories = Category.objects.all()
     if request.method == 'POST':
         title = request.POST.get('title', '').strip()
         content = request.POST.get('content', '').strip()
+        category_id = request.POST.get('category')
+        
         if title and content:
-            Announcement.objects.create(title=title, content=content, created_by=request.user)
+            category = Category.objects.get(id=category_id) if category_id else None
+            Announcement.objects.create(
+                title=title, 
+                content=content, 
+                category=category,
+                created_by=request.user
+            )
             messages.success(request, 'Announcement created!')
         return redirect('announcements_admin')
-    return render(request, 'admin_panel/announcements.html', {'announcements': announcements})
+    return render(request, 'admin_panel/announcements.html', {
+        'announcements': announcements,
+        'categories': categories
+    })
 
 
 @admin_required
@@ -230,13 +245,23 @@ def contact_messages(request):
 
 @admin_required
 def manage_categories(request):
-    categories = Category.objects.all()
+    categories = Category.objects.all().annotate(course_count=Count('course'))
     if request.method == 'POST':
+        action = request.POST.get('action')
         name = request.POST.get('name', '').strip()
         from django.utils.text import slugify
-        if name:
+        
+        if action == 'add' and name:
             Category.objects.get_or_create(name=name, defaults={'slug': slugify(name)})
             messages.success(request, f'Category "{name}" added.')
+        
+        elif action == 'delete':
+            cat_id = request.POST.get('category_id')
+            category = get_object_or_404(Category, id=cat_id)
+            cat_name = category.name
+            category.delete()
+            messages.success(request, f'Category "{cat_name}" removed.')
+            
         return redirect('manage_categories')
     return render(request, 'admin_panel/categories.html', {'categories': categories})
 

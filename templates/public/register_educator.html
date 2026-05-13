@@ -27,8 +27,16 @@
                 {{ form.phone }}
               </div>
               <div class="col-md-6">
-                <label class="form-label">Subjects</label>
+                <label class="form-label">Primary Category *</label>
+                {{ form.primary_category }}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Other Subjects</label>
                 {{ form.subjects }}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Institute Name (Optional)</label>
+                {{ form.institute_name }}
               </div>
               <div class="col-md-6">
                 <label class="form-label">Qualification</label>
@@ -64,5 +72,10 @@
 </section>
 {% endblock %}
 {% block extra_js %}
-<script>document.querySelectorAll('#eduForm input, #eduForm textarea').forEach(el => el.classList.add('form-control'));</script>
+<script>
+document.querySelectorAll('#eduForm input, #eduForm textarea, #eduForm select').forEach(el => {
+    if (el.tagName === 'SELECT') el.classList.add('form-select');
+    else el.classList.add('form-control');
+});
+</script>
 {% endblock %}

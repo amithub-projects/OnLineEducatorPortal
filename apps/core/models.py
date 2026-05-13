@@ -35,6 +35,7 @@ class SiteSettings(models.Model):
 class Announcement(models.Model):
     title = models.CharField(max_length=200)
     content = models.TextField()
+    category = models.ForeignKey('courses.Category', on_delete=models.SET_NULL, null=True, blank=True, help_text="Target category. Leave blank for all students.")
     is_active = models.BooleanField(default=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(auto_now_add=True)

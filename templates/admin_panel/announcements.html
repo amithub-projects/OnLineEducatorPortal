@@ -13,6 +13,15 @@
             <h5 class="fw-bold mb-3">New Announcement</h5>
             <form method="post">{% csrf_token %}
               <div class="mb-3"><label class="form-label fw-semibold">Title</label><input type="text" name="title" class="form-control" required placeholder="Announcement title"></div>
+              <div class="mb-3"><label class="form-label fw-semibold">Target Course/Category</label>
+                <select name="category" class="form-select">
+                  <option value="">All Students (Global)</option>
+                  {% for cat in categories %}
+                  <option value="{{ cat.id }}">{{ cat.name }}</option>
+                  {% endfor %}
+                </select>
+                <small class="text-muted">Select a category to target specific students.</small>
+              </div>
               <div class="mb-3"><label class="form-label fw-semibold">Content</label><textarea name="content" class="form-control" rows="4" required placeholder="Announcement message..."></textarea></div>
               <button type="submit" class="btn btn-primary w-100"><i class="bi bi-megaphone me-2"></i>Publish</button>
             </form>
@@ -24,7 +33,16 @@
             {% for ann in announcements %}
             <div class="p-3 border-bottom">
               <div class="d-flex justify-content-between align-items-start">
-                <div><h6 class="mb-1 fw-bold">{{ ann.title }}</h6><p class="text-muted small mb-1">{{ ann.content }}</p><small class="text-muted">{{ ann.created_at|date:"d M Y H:i" }}</small></div>
+                <div>
+                  <h6 class="mb-1 fw-bold">{{ ann.title }}</h6>
+                  {% if ann.category %}
+                    <span class="badge bg-soft-primary text-primary mb-1"><i class="bi bi-tag me-1"></i> {{ ann.category.name }}</span>
+                  {% else %}
+                    <span class="badge bg-soft-secondary text-secondary mb-1">Global</span>
+                  {% endif %}
+                  <p class="text-muted small mb-1">{{ ann.content }}</p>
+                  <small class="text-muted">{{ ann.created_at|date:"d M Y H:i" }}</small>
+                </div>
                 <div class="d-flex gap-1 ms-3">
                   <a href="{% url 'toggle_announcement' ann.pk %}" class="btn btn-xs {% if ann.is_active %}btn-success{% else %}btn-outline-secondary{% endif %}">{% if ann.is_active %}Active{% else %}Inactive{% endif %}</a>
                 </div>

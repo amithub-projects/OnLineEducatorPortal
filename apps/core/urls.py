@@ -7,5 +7,6 @@ urlpatterns = [
     path('contact/', views.contact, name='contact'),
     path('educators/', views.educator_listing, name='educator_listing'),
     path('educators/<str:unique_link>/', views.educator_public_profile, name='educator_profile'),
+    path('select-course/<slug:category_slug>/', views.select_course, name='select_course'),
     path('student/dashboard/', views.student_dashboard, name='student_dashboard'),
 ]

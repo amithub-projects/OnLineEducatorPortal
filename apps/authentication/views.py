@@ -11,6 +11,21 @@ from .models import User, EducatorProfile, PasswordResetToken, Follower
 from .forms import (StudentRegistrationForm, EducatorRegistrationForm,
                     LoginForm, EducatorProfileForm, UserAvatarForm,
                     ForgotPasswordForm, ResetPasswordForm)
+from apps.courses.models import Category
+
+
+def sync_session_category(request, user):
+    if user.role == 'student' and 'selected_category_id' in request.session:
+        try:
+            category_id = request.session['selected_category_id']
+            category = Category.objects.get(id=category_id)
+            user.selected_category = category
+            user.save()
+            # We don't delete yet, in case user logs out and logs in again without choosing, 
+            # but actually it's better to clear it once synced.
+            del request.session['selected_category_id']
+        except Category.DoesNotExist:
+            pass
 
 
 def register_student(request):
@@ -20,6 +35,7 @@ def register_student(request):
     if request.method == 'POST' and form.is_valid():
         user = form.save()
         login(request, user)
+        sync_session_category(request, user)
         messages.success(request, f'Welcome, {user.full_name}! Your account has been created.')
         return redirect('student_dashboard')
     return render(request, 'public/register_student.html', {'form': form})
@@ -49,6 +65,7 @@ def user_login(request):
                 messages.warning(request, 'Your account is pending admin approval.')
                 return redirect('login')
             login(request, user)
+            sync_session_category(request, user)
             messages.success(request, f'Welcome back, {user.full_name}!')
             next_url = request.GET.get('next', 'dashboard')
             return redirect(next_url)

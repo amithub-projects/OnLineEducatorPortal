@@ -37,6 +37,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_approved = models.BooleanField(default=True)  # Educators need admin approval
+    selected_category = models.ForeignKey('courses.Category', on_delete=models.SET_NULL, null=True, blank=True, related_name='students')
     date_joined = models.DateTimeField(default=timezone.now)
     last_login = models.DateTimeField(null=True, blank=True)
 
@@ -68,7 +69,10 @@ class User(AbstractBaseUser, PermissionsMixin):
 class EducatorProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='educator_profile')
     bio = models.TextField(blank=True)
+    institute_name = models.CharField(max_length=200, blank=True, help_text="Name of your coaching center or institute")
+    institute_details = models.TextField(blank=True, help_text="Details about your institute")
     subjects = models.CharField(max_length=500, blank=True, help_text="Comma-separated subjects")
+    primary_category = models.ForeignKey('courses.Category', on_delete=models.SET_NULL, null=True, blank=True, related_name='educators')
     experience_years = models.PositiveIntegerField(default=0)
     qualification = models.CharField(max_length=200, blank=True)
     hourly_rate = models.DecimalField(max_digits=8, decimal_places=2, default=0)

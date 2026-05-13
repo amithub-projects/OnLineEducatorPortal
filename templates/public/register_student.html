@@ -28,6 +28,12 @@
                             {{ form.phone }}
                         </div>
                         <div class="mb-3">
+                            <label class="form-label fw-semibold">Select Your Course <span class="text-danger">*</span></label>
+                            {{ form.selected_category }}
+                            <small class="text-muted">Choose your primary area of interest.</small>
+                            {% if form.selected_category.errors %}<div class="text-danger small mt-1">{{ form.selected_category.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="mb-3">
                             <label class="form-label fw-semibold">Password <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 {{ form.password }}
@@ -60,6 +66,9 @@ function togglePw(id) {
     inp.type = inp.type === 'password' ? 'text' : 'password';
 }
 // Add form-control class to all inputs
-document.querySelectorAll('#registerForm input').forEach(el => el.classList.add('form-control'));
+document.querySelectorAll('#registerForm input, #registerForm select').forEach(el => {
+    if (el.tagName === 'SELECT') el.classList.add('form-select');
+    else el.classList.add('form-control');
+});
 </script>
 {% endblock %}

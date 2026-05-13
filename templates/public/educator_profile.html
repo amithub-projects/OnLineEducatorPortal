@@ -15,7 +15,14 @@
           </a>
           {% endif %}
         </div>
-        {% if profile %}<p class="lead mb-0 opacity-75">{{ profile.subjects }}</p>{% endif %}
+        {% if profile %}
+          <p class="lead mb-0 opacity-75">{{ profile.subjects }}</p>
+          {% if profile.institute_name %}
+          <div class="mt-1 small text-light opacity-75">
+            <i class="bi bi-building me-1"></i> {{ profile.institute_name }}
+          </div>
+          {% endif %}
+        {% endif %}
       </div>
     </div>
   </div>
@@ -64,9 +71,23 @@
           <a href="{% url 'private_messages' educator.pk %}" class="btn btn-primary w-100 mb-2"><i class="bi bi-chat me-2"></i>Send Message</a>
           {% endif %}
           {% if profile %}
+          {% if profile.institute_name %}
+          <div class="alert alert-info border-0 p-2 mb-3">
+            <small class="fw-bold d-block text-uppercase"><i class="bi bi-building me-1"></i> Representing</small>
+            <span class="fs-6 fw-bold">{{ profile.institute_name }}</span>
+          </div>
+          {% endif %}
+          
           {% if profile.qualification %}<p class="mb-2"><i class="bi bi-award text-primary me-2"></i><strong>Qualification:</strong> {{ profile.qualification }}</p>{% endif %}
           {% if profile.website %}<p class="mb-2"><i class="bi bi-globe text-primary me-2"></i><a href="{{ profile.website }}" target="_blank">Website</a></p>{% endif %}
           {% if profile.linkedin %}<p class="mb-2"><i class="bi bi-linkedin text-primary me-2"></i><a href="{{ profile.linkedin }}" target="_blank">LinkedIn</a></p>{% endif %}
+          
+          {% if profile.institute_details %}
+          <hr>
+          <h6 class="fw-bold small mb-2">Institute Details</h6>
+          <p class="small text-muted mb-0">{{ profile.institute_details }}</p>
+          {% endif %}
+          
           <hr>
           <p class="mb-1"><strong>Hourly Rate:</strong> {% if profile.hourly_rate %}₹{{ profile.hourly_rate }}/hr{% else %}Contact for pricing{% endif %}</p>
           <p class="mb-0 small text-muted">Share this profile:<br><code>{{ request.build_absolute_uri }}</code></p>
