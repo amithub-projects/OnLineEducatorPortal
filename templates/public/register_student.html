@@ -43,7 +43,20 @@
                         <div class="mb-4">
                             <label class="form-label fw-semibold">Confirm Password <span class="text-danger">*</span></label>
                             {{ form.confirm_password }}
-                            {% if form.non_field_errors %}<div class="text-danger small mt-1">{{ form.non_field_errors.0 }}</div>{% endif %}
+                            {% if form.errors %}
+            <div class="alert alert-danger mt-3">
+              <ul class="mb-0">
+                {% for field in form %}
+                  {% for error in field.errors %}
+                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                  {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                  <li>{{ error }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+            {% endif %}
                         </div>
                         <button type="submit" class="btn btn-primary w-100 btn-lg">
                             <i class="bi bi-person-check me-2"></i>Create Account
