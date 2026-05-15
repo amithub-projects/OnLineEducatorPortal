@@ -36,12 +36,16 @@
         </button>
         <div class="collapse navbar-collapse" id="navMenu">
             <ul class="navbar-nav mx-auto gap-1">
+                {% if not user.is_authenticated %}
                 <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">Home</a></li>
                 <li class="nav-item"><a class="nav-link" href="{% if request.resolver_match.url_name == 'home' %}#courses-section{% else %}{% url 'home' %}#courses-section{% endif %}">Courses</a></li>
                 <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}" href="{% url 'about' %}">About</a></li>
+                {% endif %}
                 <li class="nav-item"><a class="nav-link {% if 'educator_listing' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'educator_listing' %}">Find Educators</a></li>
                 <li class="nav-item"><a class="nav-link" href="{% url 'join_live_session' %}">Join Live</a></li>
+                {% if not user.is_authenticated %}
                 <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}" href="{% url 'contact' %}">Contact</a></li>
+                {% endif %}
             </ul>
             <div class="navbar-actions d-flex align-items-center gap-2">
                 {% if user.is_authenticated %}
