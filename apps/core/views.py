@@ -10,6 +10,9 @@ from .models import SiteSettings, Announcement, ContactMessage
 
 
 def home(request):
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+        
     site = SiteSettings.get_settings()
     announcements = Announcement.objects.filter(is_active=True).order_by('-created_at')[:3]
     featured_educators = User.objects.filter(
