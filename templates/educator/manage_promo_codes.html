@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}Manage Promo Codes - Educator Dashboard{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+{% block content %}
+<div class="dashboard-layout">
+  {% include 'educator/sidebar.html' %}
+  <div class="dashboard-main">
+    <div class="dashboard-topbar">
+      <h4 class="mb-0">Manage Promo Codes</h4>
+    </div>
+    <div class="p-4">
+      <div class="dash-card p-4">
+        <p class="text-muted mb-4">
+          Generate and manage your unique promo code.
+          {% if request.user.educator_profile.institute_name and not request.user.educator_profile.parent_institute %}
+            You can also generate codes for your sub-educators.
+          {% endif %}
+          When a student registers using a promo code, they will be strictly linked to that educator and will only see their courses and materials.
+        </p>
+        
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                <th>Educator Name</th>
+                <th>Role</th>
+                <th>Promo Code</th>
+                <th>Status</th>
+                <th>Linked Students</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for edu in educators %}
+              <tr>
+                <td>
+                  <strong>{{ edu.full_name }}</strong>
+                  {% if edu == request.user %}
+                    {% if request.user.educator_profile.institute_name and not request.user.educator_profile.parent_institute %}
+                      <span class="badge bg-info ms-2">You (Institute)</span>
+                    {% else %}
+                      <span class="badge bg-primary ms-2">You</span>
+                    {% endif %}
+                  {% endif %}
+                </td>
+                 <td>
+                   {% if edu == request.user %}
+                     {% if request.user.educator_profile.institute_name and not request.user.educator_profile.parent_institute %}Institute{% else %}Educator{% endif %}
+                   {% else %}
+                     Sub-Educator
+                   {% endif %}
+                 </td>
+                
+                {% if edu.promo_code_obj %}
+                  <td><span class="badge bg-dark fs-6 font-monospace">{{ edu.promo_code_obj.code }}</span></td>
+                  <td>
+                    {% if edu.promo_code_obj.is_active %}
+                      <span class="badge bg-success-subtle text-success">Active</span>
+                    {% else %}
+                      <span class="badge bg-danger-subtle text-danger">Inactive</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ edu.linked_students.count }}</td>
+                  <td>
+                    <form method="post" class="d-inline">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="toggle">
+                      <input type="hidden" name="educator_id" value="{{ edu.id }}">
+                      {% if edu.promo_code_obj.is_active %}
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Deactivate</button>
+                      {% else %}
+                        <button type="submit" class="btn btn-sm btn-outline-success">Activate</button>
+                      {% endif %}
+                    </form>
+                  </td>
+                {% else %}
+                  <td><span class="text-muted fst-italic">None</span></td>
+                  <td>-</td>
+                  <td>{{ edu.linked_students.count }}</td>
+                  <td>
+                    <form method="post" class="d-inline">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="generate">
+                      <input type="hidden" name="educator_id" value="{{ edu.id }}">
+                      <button type="submit" class="btn btn-sm btn-primary">Generate Code</button>
+                    </form>
+                  </td>
+                {% endif %}
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

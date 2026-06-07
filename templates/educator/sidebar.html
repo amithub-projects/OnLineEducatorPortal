@@ -10,8 +10,24 @@
             <div class="sidebar-avatar-placeholder">{{ request.user.full_name|first|upper }}</div>
         {% endif %}
         <div>
-            <p class="sidebar-user-name">{{ request.user.full_name|truncatechars:18 }}</p>
-            <span class="sidebar-user-role">Educator</span>
+            <p class="sidebar-user-name">
+                {% if request.user.educator_profile.parent_institute %}
+                    {{ request.user.educator_profile.parent_institute.educator_profile.institute_name|truncatechars:18 }}
+                {% elif request.user.educator_profile.educator_type == 'institute' %}
+                    {{ request.user.educator_profile.institute_name|truncatechars:18 }}
+                {% else %}
+                    {{ request.user.full_name|truncatechars:18 }}
+                {% endif %}
+            </p>
+            <span class="sidebar-user-role">
+                {% if request.user.educator_profile.parent_institute %}
+                    Sub-Educator
+                {% elif request.user.educator_profile.educator_type == 'institute' %}
+                    Institute
+                {% else %}
+                    Educator
+                {% endif %}
+            </span>
         </div>
     </div>
     <ul class="sidebar-nav">
@@ -19,12 +35,35 @@
         <li><a href="{% url 'educator_dashboard' %}" class="sidebar-link {% if request.resolver_match.url_name == 'educator_dashboard' %}active{% endif %}">
             <i class="bi bi-speedometer2"></i><span>Dashboard</span>
         </a></li>
-        <li><a href="{% url 'course_list' %}" class="sidebar-link {% if 'course' in request.resolver_match.url_name %}active{% endif %}">
-            <i class="bi bi-journal-richtext"></i><span>My Courses</span>
-        </a></li>
+        <li>
+            <a href="{% url 'course_list' %}" class="sidebar-link {% if 'course' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="bi bi-journal-richtext"></i><span>{% if request.user.educator_profile.parent_institute %}My Subject{% else %}My Courses{% endif %}</span>
+            </a>
+            {% if request.user.educator_profile.parent_institute and request.user.assigned_subjects.exists %}
+            <ul class="list-unstyled ps-4 ms-2 mt-1 small" style="border-left: 1px solid rgba(255,255,255,0.15);">
+                {% for subject in request.user.assigned_subjects.all %}
+                <li class="py-1">
+                    <a href="{% url 'course_detail_educator' subject.course.pk %}" class="text-white-50 text-decoration-none d-block py-1 hover-light" style="font-size: 0.82rem; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.5)'">
+                        <i class="bi bi-journal-bookmark me-1 text-primary-emphasis" style="font-size: 0.75rem;"></i>{{ subject.title }} <span class="opacity-75" style="font-size: 0.75rem;">({{ subject.course.title }})</span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </li>
         <li><a href="{% url 'student_management' %}" class="sidebar-link">
             <i class="bi bi-people"></i><span>Students</span>
         </a></li>
+        {% if request.user.educator_profile.institute_name and not request.user.educator_profile.parent_institute %}
+        <li><a href="{% url 'manage_sub_educators' %}" class="sidebar-link {% if 'sub_educators' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-person-lines-fill"></i><span>Manage Educators</span>
+        </a></li>
+        {% endif %}
+        {% if not request.user.educator_profile.parent_institute %}
+        <li><a href="{% url 'manage_promo_codes' %}" class="sidebar-link {% if 'promo_codes' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-ticket-perforated"></i><span>Promo Codes</span>
+        </a></li>
+        {% endif %}
 
         <li class="sidebar-section">Live & Chat</li>
         <li><a href="{% url 'live_sessions_list' %}" class="sidebar-link">

@@ -19,6 +19,13 @@ class LiveClassConsumer(AsyncWebsocketConsumer):
             await self.close()
             return
 
+        # Access control: verify enrollment for students at WebSocket connect
+        if self.user.role == 'student':
+            is_enrolled = await self.check_enrollment()
+            if not is_enrolled:
+                await self.close()
+                return
+
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
@@ -153,3 +160,22 @@ class LiveClassConsumer(AsyncWebsocketConsumer):
             ).update(left_at=timezone.now())
         except LiveSession.DoesNotExist:
             pass
+
+    @database_sync_to_async
+    def check_enrollment(self):
+        from .models import LiveSession
+        from apps.courses.models import Enrollment
+        try:
+            session = LiveSession.objects.get(room_code=self.room_code)
+            if not session.course:
+                return True
+            # For educators (creator or assigned sub-educator), enrollment doesn't apply
+            if self.user.role == 'educator':
+                return True
+            return Enrollment.objects.filter(
+                student=self.user,
+                course=session.course,
+                payment_status='paid'
+            ).exists()
+        except LiveSession.DoesNotExist:
+            return False

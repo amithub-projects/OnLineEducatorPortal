@@ -3,19 +3,19 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import ChatRoom, Message, PrivateMessage
 from apps.courses.models import Course, Enrollment
-from apps.courses.views import educator_required
+from apps.courses.views import educator_required, get_educator_courses
 from apps.authentication.models import User
 
 
 @educator_required
 def chat_room_list(request):
-    rooms = ChatRoom.objects.filter(created_by=request.user)
+    rooms = ChatRoom.objects.filter(course__in=get_educator_courses(request.user)).distinct()
     return render(request, 'educator/chat_rooms.html', {'rooms': rooms})
 
 
 @educator_required
 def create_chat_room(request, course_pk):
-    course = get_object_or_404(Course, pk=course_pk, educator=request.user)
+    course = get_object_or_404(get_educator_courses(request.user), pk=course_pk)
     room, created = ChatRoom.objects.get_or_create(
         course=course,
         room_type='course',

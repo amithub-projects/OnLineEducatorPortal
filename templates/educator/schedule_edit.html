@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% block title %}Edit Scheduled Class - Educator{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+{% block content %}
+<div class="dashboard-layout">
+  {% include 'educator/sidebar.html' %}
+  <div class="dashboard-main">
+    <div class="dashboard-topbar"><h4 class="mb-0">Edit Scheduled Class</h4></div>
+    <div class="p-4"><div class="row justify-content-center"><div class="col-lg-7">
+      <div class="dash-card p-4">
+        <form method="post">
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label fw-semibold">Course *</label>
+              <select name="course" id="courseSelect" class="form-select" onchange="updateSubjectsAndSubEducators()" required>
+                <option value="">-- Select a Course --</option>
+                {% for c in courses %}
+                <option value="{{ c.pk }}" {% if schedule.course_id == c.pk %}selected{% endif %}>{{ c.title }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label fw-semibold">Subject Name *</label>
+              <select name="subject" id="subjectSelect" class="form-select" onchange="updateSubEducators()" required>
+                <option value="">-- Select a Subject --</option>
+              </select>
+              <small class="form-text text-muted">Select the subject of the course for this live class.</small>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label fw-semibold"><i class="bi bi-person-check me-1"></i>Select Assigned Sub-Educator</label>
+              <select name="assigned_sub_educator" id="subEducatorSelect" class="form-select">
+                <option value="">-- Select Sub-Educator --</option>
+              </select>
+              <small class="form-text text-muted">Select the sub-educator assigned to conduct this class (assigned to this subject).</small>
+              <div id="noSubWarning" class="alert alert-warning mt-2 small d-none">
+                <i class="bi bi-exclamation-triangle me-1"></i>No sub-educators are assigned to this subject. You can assign sub-educators in Course Content.
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Start Date & Time *</label>
+              <input type="datetime-local" name="start_time" class="form-control" value="{{ schedule.start_time|date:'Y-m-d\TH:i' }}" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">End Date & Time *</label>
+              <input type="datetime-local" name="end_time" class="form-control" value="{{ schedule.end_time|date:'Y-m-d\TH:i' }}" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Meeting Link</label>
+              <input type="url" name="meeting_link" class="form-control" value="{{ schedule.meeting_link }}" placeholder="https://meet.google.com/...">
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Description</label>
+              <textarea name="description" class="form-control" rows="3">{{ schedule.description }}</textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Topics to be Covered</label>
+              <textarea name="topics_covered" class="form-control" rows="2" placeholder="List the specific topics or curriculum units to cover...">{{ schedule.topics_covered }}</textarea>
+            </div>
+            <div class="col-12">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="is_cancelled" id="isCancelled" {% if schedule.is_cancelled %}checked{% endif %}>
+                <label class="form-check-label text-danger fw-semibold" for="isCancelled">🛑 Cancel this class</label>
+              </div>
+            </div>
+          </div>
+          <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary px-5"><i class="bi bi-save me-2"></i>Save Changes</button>
+            <a href="{% url 'schedule_list' %}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div></div></div>
+  </div>
+</div>
+
+<script>
+const hierarchyMap = {{ hierarchy_map_json|safe }};
+
+function updateSubjectsAndSubEducators() {
+    const courseId = document.getElementById('courseSelect').value;
+    const subjectSelect = document.getElementById('subjectSelect');
+    const subSelect = document.getElementById('subEducatorSelect');
+    const warning = document.getElementById('noSubWarning');
+
+    subjectSelect.innerHTML = '<option value="">-- Select a Subject --</option>';
+    subSelect.innerHTML = '<option value="">-- Select Sub-Educator --</option>';
+    if (warning) warning.classList.add('d-none');
+
+    if (!courseId || !hierarchyMap[courseId]) {
+        return;
+    }
+
+    const subjects = hierarchyMap[courseId].subjects;
+    for (const subId in subjects) {
+        const opt = document.createElement('option');
+        opt.value = subId;
+        opt.textContent = subjects[subId].title;
+        subjectSelect.appendChild(opt);
+    }
+}
+
+function updateSubEducators() {
+    const courseId = document.getElementById('courseSelect').value;
+    const subjectId = document.getElementById('subjectSelect').value;
+    const subSelect = document.getElementById('subEducatorSelect');
+    const warning = document.getElementById('noSubWarning');
+
+    subSelect.innerHTML = '<option value="">-- Select Sub-Educator --</option>';
+    if (warning) warning.classList.add('d-none');
+
+    if (!courseId || !subjectId || !hierarchyMap[courseId] || !hierarchyMap[courseId].subjects[subjectId]) {
+        return;
+    }
+
+    const subEducators = hierarchyMap[courseId].subjects[subjectId].sub_educators;
+    if (subEducators.length === 0) {
+        if (warning) warning.classList.remove('d-none');
+        return;
+    }
+
+    subEducators.forEach(sub => {
+        const opt = document.createElement('option');
+        opt.value = sub.id;
+        opt.textContent = sub.full_name;
+        subSelect.appendChild(opt);
+    });
+}
+
+// Run once on load to filter and pre-select initial values
+document.addEventListener('DOMContentLoaded', () => {
+    const initialCourseId = "{{ schedule.course.id|default:'' }}";
+    const initialSubjectId = "{{ schedule.subject.id|default:'' }}";
+    const initialSubId = "{{ schedule.assigned_sub_educator.id|default:'' }}";
+
+    if (initialCourseId) {
+        document.getElementById('courseSelect').value = initialCourseId;
+        updateSubjectsAndSubEducators();
+
+        if (initialSubjectId) {
+            document.getElementById('subjectSelect').value = initialSubjectId;
+            updateSubEducators();
+
+            if (initialSubId) {
+                document.getElementById('subEducatorSelect').value = initialSubId;
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

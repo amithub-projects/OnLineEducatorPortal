@@ -8,36 +8,85 @@
     <div class="dashboard-topbar">
       <div><h4 class="mb-0">{{ course.title }}</h4><small class="text-muted">{{ enrolled_students.count }} students enrolled</small></div>
       <div class="d-flex gap-2 align-items-center">
-        {% if not course.is_published %}
-        <form method="post" action="{% url 'course_edit' course.pk %}" class="d-inline">
-          {% csrf_token %}
-          <input type="hidden" name="title" value="{{ course.title }}">
-          <input type="hidden" name="description" value="{{ course.description }}">
-          <input type="hidden" name="is_published" value="on">
-          <button type="submit" class="btn btn-success btn-sm"><i class="bi bi-megaphone me-1"></i>Publish Now</button>
-        </form>
+        {% if not request.user.educator_profile.parent_institute %}
+          {% if not course.is_published %}
+          <form method="post" action="{% url 'course_edit' course.pk %}" class="d-inline">
+            {% csrf_token %}
+            <input type="hidden" name="title" value="{{ course.title }}">
+            <input type="hidden" name="description" value="{{ course.description }}">
+            <input type="hidden" name="is_published" value="on">
+            <button type="submit" class="btn btn-success btn-sm"><i class="bi bi-megaphone me-1"></i>Publish Now</button>
+          </form>
+          {% else %}
+          <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Published</span>
+          {% endif %}
+          <a href="{% url 'course_edit' course.pk %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil me-1"></i>Edit</a>
         {% else %}
-        <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Published</span>
+          {% if course.is_published %}
+          <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Published</span>
+          {% else %}
+          <span class="badge bg-secondary">Draft</span>
+          {% endif %}
         {% endif %}
-        <a href="{% url 'course_edit' course.pk %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil me-1"></i>Edit</a>
         <a href="{% url 'create_chat_room' course.pk %}" class="btn btn-outline-info btn-sm"><i class="bi bi-chat me-1"></i>Chat</a>
       </div>
     </div>
     <div class="p-4">
       <div class="row g-4">
-        <!-- Modules & Lessons -->
+        <!-- Subjects & Lessons -->
         <div class="col-lg-8">
           <div class="dash-card mb-4">
             <div class="dash-card-header">
-              <h5 class="mb-0">Course Content</h5>
+              <h5 class="mb-0">Course Content (Subjects)</h5>
             </div>
             <div class="p-3">
               {% for module in modules %}
               <div class="border rounded-3 mb-3 overflow-hidden">
                 <div class="d-flex justify-content-between align-items-center p-3 bg-light">
-                  <strong>{{ forloop.counter }}. {{ module.title }}</strong>
-                  <span class="badge bg-primary">{{ module.lessons.count }} lessons</span>
+                  <div>
+                    <strong class="text-dark">{{ forloop.counter }}. {{ module.title }}</strong>
+                    {% if sub_educators.exists %}
+                    <div class="mt-1">
+                      <small class="text-muted" style="font-size: 0.8rem;">Assigned Instructors: </small>
+                      {% for sub in module.assigned_sub_educators.all %}
+                        <span class="badge bg-secondary-subtle text-secondary border small">{{ sub.full_name }}</span>
+                      {% empty %}
+                        <span class="badge bg-light text-muted border small">None</span>
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                  <div class="d-flex gap-2 align-items-center">
+                    <span class="badge bg-primary">{{ module.lessons.count }} lessons</span>
+                    {% if sub_educators.exists and not request.user.educator_profile.parent_institute %}
+                      <button class="btn btn-sm btn-outline-secondary py-0 px-2" type="button" data-bs-toggle="collapse" data-bs-target="#assignSubEd{{ module.pk }}" title="Assign Sub-Educators">
+                        <i class="bi bi-person-plus"></i> Assign
+                      </button>
+                    {% endif %}
+                  </div>
                 </div>
+
+                {% if sub_educators.exists and not request.user.educator_profile.parent_institute %}
+                <div class="collapse p-3 border-bottom bg-light" id="assignSubEd{{ module.pk }}">
+                  <form method="post" action="{% url 'assign_subject_sub_educators' module.pk %}">
+                    {% csrf_token %}
+                    <label class="form-label small fw-semibold">Assign Sub-Educators to this Subject:</label>
+                    <div class="d-flex flex-wrap gap-3 mb-2">
+                      {% for sub in sub_educators %}
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="sub_educators" value="{{ sub.pk }}" id="sub_{{ module.pk }}_{{ sub.pk }}"
+                          {% if sub in module.assigned_sub_educators.all %}checked{% endif %}>
+                        <label class="form-check-label small" for="sub_{{ module.pk }}_{{ sub.pk }}">
+                          {{ sub.full_name }}
+                        </label>
+                      </div>
+                      {% endfor %}
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-primary">Save Assignments</button>
+                  </form>
+                </div>
+                {% endif %}
+
                 {% for lesson in module.lessons.all %}
                 <div class="d-flex align-items-center gap-3 p-3 border-top">
                   <i class="bi bi-{% if lesson.video_file or lesson.video_url %}play-circle text-primary{% else %}file-text text-muted{% endif %}"></i>
@@ -48,6 +97,7 @@
                 {% empty %}
                 <p class="text-muted p-3 mb-0 small">No lessons yet.</p>
                 {% endfor %}
+                {% if not request.user.educator_profile.parent_institute %}
                  <form method="post" action="{% url 'lesson_create' module.pk %}" enctype="multipart/form-data" class="p-3 border-top bg-light">
                   {% csrf_token %}
                   <div class="row g-2">
@@ -65,16 +115,19 @@
                     <div class="col-md-1"><button class="btn btn-sm btn-primary w-100" type="submit" title="Add Lesson"><i class="bi bi-plus"></i></button></div>
                   </div>
                 </form>
+                {% endif %}
               </div>
               {% empty %}
-              <p class="text-muted text-center p-4">No modules yet. Add your first module below.</p>
+              <p class="text-muted text-center p-4">No subjects yet. Add your first subject below.</p>
               {% endfor %}
               <!-- Add module -->
+              {% if not request.user.educator_profile.parent_institute %}
               <form method="post" action="{% url 'module_create' course.pk %}" class="d-flex gap-2 mt-2">
                 {% csrf_token %}
-                <input type="text" name="title" class="form-control" placeholder="New module title..." required>
-                <button type="submit" class="btn btn-primary text-nowrap"><i class="bi bi-folder-plus me-1"></i>Add Module</button>
+                <input type="text" name="title" class="form-control" placeholder="New subject name..." required>
+                <button type="submit" class="btn btn-primary text-nowrap"><i class="bi bi-folder-plus me-1"></i>Add Subject</button>
               </form>
+              {% endif %}
             </div>
           </div>
 

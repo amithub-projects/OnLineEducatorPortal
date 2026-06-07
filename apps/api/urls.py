@@ -13,6 +13,7 @@ urlpatterns = [
     path('admin-panel/students/<int:pk>/', admin_views.student_detail_admin, name='student_detail_admin'),
     path('admin-panel/courses/', admin_views.manage_courses, name='manage_courses'),
     path('admin-panel/courses/<int:pk>/', admin_views.admin_course_detail, name='admin_course_detail'),
+    path('admin-panel/courses/<int:pk>/toggle-featured/', admin_views.toggle_featured_course, name='toggle_featured_course'),
     path('admin-panel/lessons/<int:pk>/delete/', admin_views.admin_delete_lesson, name='admin_delete_lesson'),
     path('admin-panel/payments/', admin_views.manage_payments, name='manage_payments'),
     path('admin-panel/settings/', admin_views.site_settings_admin, name='site_settings_admin'),

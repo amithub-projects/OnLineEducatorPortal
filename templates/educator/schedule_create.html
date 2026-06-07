@@ -11,14 +11,61 @@
         <form method="post">
           {% csrf_token %}
           <div class="row g-3">
-            <div class="col-12"><label class="form-label fw-semibold">Class Title *</label><input type="text" name="title" class="form-control" placeholder="e.g. Python Chapter 3 - Functions" required></div>
-            <div class="col-12"><label class="form-label fw-semibold">Related Course (optional)</label>
-              <select name="course" class="form-select"><option value="">-- None --</option>{% for c in courses %}<option value="{{ c.pk }}">{{ c.title }}</option>{% endfor %}</select>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Course *</label>
+              <select name="course" id="courseSelect" class="form-select" onchange="updateSubjectsAndSubEducators()" required>
+                <option value="">-- Select a Course --</option>
+                {% for c in courses %}
+                  <option value="{{ c.pk }}">{{ c.title }}</option>
+                {% endfor %}
+              </select>
+              <small class="form-text text-muted">Only enrolled students of this course will see the class.</small>
             </div>
-            <div class="col-md-6"><label class="form-label fw-semibold">Start Date & Time *</label><input type="datetime-local" name="start_time" class="form-control" required></div>
-            <div class="col-md-6"><label class="form-label fw-semibold">End Date & Time *</label><input type="datetime-local" name="end_time" class="form-control" required></div>
-            <div class="col-12"><label class="form-label fw-semibold">Meeting Link</label><input type="url" name="meeting_link" class="form-control" placeholder="https://meet.google.com/..."></div>
-            <div class="col-12"><label class="form-label fw-semibold">Description</label><textarea name="description" class="form-control" rows="3" placeholder="What will be covered in this class?"></textarea></div>
+
+            <div class="col-12">
+              <label class="form-label fw-semibold">Subject Name *</label>
+              <select name="subject" id="subjectSelect" class="form-select" onchange="updateSubEducators()" required>
+                <option value="">-- Select a Subject --</option>
+              </select>
+              <small class="form-text text-muted">Select the subject of the course for this live class.</small>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label fw-semibold"><i class="bi bi-person-check me-1"></i>Select Assigned Sub-Educator</label>
+              <select name="assigned_sub_educator" id="subEducatorSelect" class="form-select">
+                <option value="">-- Select Sub-Educator --</option>
+              </select>
+              <small class="form-text text-muted">Select the sub-educator assigned to conduct this class (assigned to this subject).</small>
+              <div id="noSubWarning" class="alert alert-warning mt-2 small d-none">
+                <i class="bi bi-exclamation-triangle me-1"></i>No sub-educators are assigned to this subject. You can assign sub-educators in Course Content.
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Start Date & Time *</label>
+              <input type="datetime-local" name="start_time" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">End Date & Time *</label>
+              <input type="datetime-local" name="end_time" class="form-control" required>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label fw-semibold">Meeting Link</label>
+              <input type="url" name="meeting_link" class="form-control" placeholder="https://meet.google.com/...">
+              <small class="form-text text-muted">Optional. Can also be shared later via in-app chat during the live session.</small>
+            </div>
+            
+            <div class="col-12">
+              <label class="form-label fw-semibold">Class Description</label>
+              <textarea name="description" class="form-control" rows="2" placeholder="Brief description of the class..."></textarea>
+            </div>
+            
+            <div class="col-12">
+              <label class="form-label fw-semibold">Topics to be Covered</label>
+              <textarea name="topics_covered" class="form-control" rows="2" placeholder="List the specific topics or curriculum units to cover..."></textarea>
+            </div>
+
             <div class="col-12">
               <div class="form-check">
                 <input class="form-check-input" type="checkbox" name="send_notification" id="sendNotif" checked>
@@ -26,6 +73,7 @@
               </div>
             </div>
           </div>
+          
           <div class="d-flex gap-2 mt-4">
             <button type="submit" class="btn btn-primary px-5"><i class="bi bi-calendar-check me-2"></i>Schedule Class</button>
             <a href="{% url 'schedule_list' %}" class="btn btn-outline-secondary">Cancel</a>
@@ -35,4 +83,58 @@
     </div></div></div>
   </div>
 </div>
+
+<script>
+const hierarchyMap = {{ hierarchy_map_json|safe }};
+
+function updateSubjectsAndSubEducators() {
+    const courseId = document.getElementById('courseSelect').value;
+    const subjectSelect = document.getElementById('subjectSelect');
+    const subSelect = document.getElementById('subEducatorSelect');
+    const warning = document.getElementById('noSubWarning');
+
+    subjectSelect.innerHTML = '<option value="">-- Select a Subject --</option>';
+    subSelect.innerHTML = '<option value="">-- Select Sub-Educator --</option>';
+    if (warning) warning.classList.add('d-none');
+
+    if (!courseId || !hierarchyMap[courseId]) {
+        return;
+    }
+
+    const subjects = hierarchyMap[courseId].subjects;
+    for (const subId in subjects) {
+        const opt = document.createElement('option');
+        opt.value = subId;
+        opt.textContent = subjects[subId].title;
+        subjectSelect.appendChild(opt);
+    }
+}
+
+function updateSubEducators() {
+    const courseId = document.getElementById('courseSelect').value;
+    const subjectId = document.getElementById('subjectSelect').value;
+    const subSelect = document.getElementById('subEducatorSelect');
+    const warning = document.getElementById('noSubWarning');
+
+    subSelect.innerHTML = '<option value="">-- Select Sub-Educator --</option>';
+    if (warning) warning.classList.add('d-none');
+
+    if (!courseId || !subjectId || !hierarchyMap[courseId] || !hierarchyMap[courseId].subjects[subjectId]) {
+        return;
+    }
+
+    const subEducators = hierarchyMap[courseId].subjects[subjectId].sub_educators;
+    if (subEducators.length === 0) {
+        if (warning) warning.classList.remove('d-none');
+        return;
+    }
+
+    subEducators.forEach(sub => {
+        const opt = document.createElement('option');
+        opt.value = sub.id;
+        opt.textContent = sub.full_name;
+        subSelect.appendChild(opt);
+    });
+}
+</script>
 {% endblock %}

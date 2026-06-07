@@ -41,25 +41,29 @@
       <div class="col-lg-8">
         <h4 class="fw-bold mb-3">Course Content</h4>
         {% for module in modules %}
-        <div class="border rounded-3 mb-3 overflow-hidden">
-          <div class="d-flex justify-content-between p-3 bg-light fw-bold">
-            <span>{{ forloop.counter }}. {{ module.title }}</span>
+        <div class="border rounded-3 mb-3 overflow-hidden shadow-sm">
+          <div class="d-flex justify-content-between p-3 bg-light fw-bold text-dark border-bottom">
+            <span><i class="bi bi-collection-play me-2 text-primary"></i>{{ forloop.counter }}. {{ module.title }}</span>
             <span class="badge bg-primary">{{ module.lessons.count }} lessons</span>
           </div>
           {% for lesson in module.lessons.all %}
-          <div class="d-flex align-items-center gap-3 p-3 border-top">
-            <i class="bi bi-{% if lesson.video_file or lesson.video_url %}play-circle-fill text-primary{% else %}file-earmark text-muted{% endif %}"></i>
-            <span class="flex-fill">{{ lesson.title }}</span>
-            <span class="text-muted small me-2">{{ lesson.duration_minutes }} min</span>
+          <div class="d-flex align-items-center gap-3 p-3 border-top bg-white">
+            <i class="bi bi-{% if lesson.video_file or lesson.video_url %}play-circle-fill text-primary{% else %}file-earmark text-muted{% endif %} fs-5"></i>
+            <span class="flex-fill fw-semibold text-dark">{{ lesson.title }}</span>
+            <span class="text-muted small me-2"><i class="bi bi-clock me-1"></i>{{ lesson.duration_minutes }} min</span>
             {% if lesson.is_preview %}
-              <a href="{% url 'lesson_preview' lesson.pk %}" class="btn btn-sm btn-success-subtle text-success py-0 px-2"><i class="bi bi-play-fill me-1"></i>Watch Free</a>
+              <a href="{% url 'lesson_preview' lesson.pk %}" class="btn btn-sm btn-success-subtle text-success border border-success border-opacity-25 rounded-pill px-3 py-1 fw-bold" style="font-size: 0.75rem;">
+                <i class="bi bi-unlock-fill me-1"></i>Watch Free (Follower Exclusive)
+              </a>
             {% else %}
-              <span class="badge bg-light text-muted fw-normal"><i class="bi bi-lock-fill me-1"></i>Locked</span>
+              <span class="badge bg-danger-subtle text-danger border border-danger border-opacity-10 rounded-pill px-3 py-1 fw-normal" style="font-size: 0.75rem;">
+                <i class="bi bi-lock-fill me-1"></i>Premium Lesson (Enrolled Only)
+              </span>
             {% endif %}
           </div>
           {% endfor %}
         </div>
-        {% empty %}<p class="text-muted">Course content coming soon.</p>{% endfor %}
+        {% empty %}<p class="text-muted text-center py-4">Course content coming soon.</p>{% endfor %}
       </div>
       <div class="col-lg-4">
         {% if course.educator.educator_profile %}

@@ -7,7 +7,9 @@
   <div class="dashboard-main">
     <div class="dashboard-topbar">
       <h4 class="mb-0">Class Schedule</h4>
+      {% if not is_sub_educator %}
       <a href="{% url 'schedule_create' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus me-1"></i>Schedule Class</a>
+      {% endif %}
     </div>
     <div class="p-4">
       <!-- Upcoming -->
@@ -15,41 +17,102 @@
       <div class="row g-3 mb-5">
         {% for sch in upcoming %}
         <div class="col-md-6 col-lg-4">
-          <div class="dash-card p-3 h-100">
+          <div class="dash-card p-3 h-100 {% if sch.is_cancelled %}border-danger opacity-75{% endif %}">
             <div class="d-flex justify-content-between mb-2">
-              <span class="badge bg-primary">{{ sch.start_time|date:"d M Y" }}</span>
+              <span class="badge {% if sch.is_cancelled %}bg-danger{% else %}bg-primary{% endif %}">
+                {% if sch.is_cancelled %}Cancelled{% else %}{{ sch.start_time|date:"d M Y" }}{% endif %}
+              </span>
               <span class="badge bg-light text-dark">{{ sch.start_time|time:"H:i" }} - {{ sch.end_time|time:"H:i" }}</span>
             </div>
-            <h6 class="fw-bold">{{ sch.title }}</h6>
-            {% if sch.course %}<p class="text-muted small mb-2"><i class="bi bi-journal me-1"></i>{{ sch.course.title }}</p>{% endif %}
-            {% if sch.description %}<p class="text-muted small mb-2">{{ sch.description|truncatechars:80 }}</p>{% endif %}
-            {% if sch.meeting_link %}<a href="{{ sch.meeting_link }}" target="_blank" class="btn btn-success btn-sm mb-2 w-100"><i class="bi bi-camera-video me-1"></i>Join Meeting</a>{% endif %}
+            <h6 class="fw-bold {% if sch.is_cancelled %}text-decoration-line-through text-muted{% endif %}">{{ sch.title }}</h6>
+            {% if sch.course %}
+            <p class="text-muted small mb-1"><i class="bi bi-journal me-1"></i>{{ sch.course.title }} {% if sch.subject %}- {{ sch.subject.title }}{% endif %}</p>
+            {% endif %}
+            
+            {% if sch.assigned_sub_educator %}
+            <p class="text-info small mb-2"><i class="bi bi-person-badge me-1"></i>Instructor: <strong>{{ sch.assigned_sub_educator.full_name }}</strong></p>
+            {% else %}
+            <p class="text-muted small mb-2"><i class="bi bi-person-badge me-1"></i>Instructor: <strong>{{ sch.educator.full_name }}</strong></p>
+            {% endif %}
+
+            {% if sch.description %}
+            <p class="text-muted small mb-2">{{ sch.description|truncatechars:80 }}</p>
+            {% endif %}
+
+            {% if not sch.is_cancelled %}
+              {% if sch.live_session and sch.live_session.is_active %}
+                <a href="{% url 'live_session_room' sch.live_session.room_code %}" class="btn btn-danger btn-sm mb-2 w-100 animate-pulse">
+                  <i class="bi bi-broadcast me-1"></i>Live Session Active - Join
+                </a>
+              {% else %}
+                <a href="{% url 'start_scheduled_live' sch.pk %}" class="btn btn-outline-danger btn-sm mb-2 w-100">
+                  <i class="bi bi-camera-video me-1"></i>Start Live Class
+                </a>
+              {% endif %}
+              
+              {% if sch.meeting_link %}
+              <a href="{{ sch.meeting_link }}" target="_blank" class="btn btn-success btn-sm mb-2 w-100"><i class="bi bi-link-45deg me-1"></i>External Link</a>
+              {% endif %}
+            {% endif %}
+
             <div class="d-flex gap-2">
               <a href="{% url 'attendance_view' sch.pk %}" class="btn btn-outline-secondary btn-sm flex-fill">Attendance</a>
-              <a href="{% url 'schedule_edit' sch.pk %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil"></i></a>
+              {% if not is_sub_educator and not sch.has_started %}
+              <a href="{% url 'schedule_edit' sch.pk %}" class="btn btn-outline-primary btn-sm" title="Edit Schedule"><i class="bi bi-pencil"></i></a>
+              {% endif %}
+              {% if not is_sub_educator and not sch.is_cancelled and not sch.has_started %}
+              <a href="{% url 'schedule_cancel' sch.pk %}" class="btn btn-outline-danger btn-sm" onclick="return confirm('Are you sure you want to cancel this scheduled class?');"><i class="bi bi-x-circle me-1"></i>Cancel</a>
+              {% endif %}
+              {% if not is_sub_educator and sch.is_cancelled %}
+              <a href="{% url 'schedule_delete' sch.pk %}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this cancelled class schedule?');"><i class="bi bi-trash me-1"></i>Delete</a>
+              {% endif %}
             </div>
           </div>
         </div>
         {% empty %}
-        <div class="col-12"><p class="text-muted">No upcoming classes. <a href="{% url 'schedule_create' %}">Schedule one now.</a></p></div>
+        <div class="col-12"><p class="text-muted">No upcoming classes. {% if not is_sub_educator %}<a href="{% url 'schedule_create' %}">Schedule one now.</a>{% endif %}</p></div>
         {% endfor %}
       </div>
+      
       <!-- Past -->
       <h5 class="fw-bold mb-3">🕐 Past Classes</h5>
       <div class="dash-card">
         <div class="table-responsive">
           <table class="table table-hover align-middle mb-0">
-            <thead class="table-light"><tr><th>Class</th><th>Date</th><th>Duration</th><th>Actions</th></tr></thead>
+            <thead class="table-light">
+              <tr>
+                <th>Class</th>
+                <th>Instructor</th>
+                <th>Date</th>
+                <th>Duration</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
             <tbody>
               {% for sch in past %}
-              <tr>
-                <td><span class="fw-semibold">{{ sch.title }}</span>{% if sch.course %}<br><small class="text-muted">{{ sch.course.title }}</small>{% endif %}</td>
+              <tr class="{% if sch.is_cancelled %}table-danger opacity-75{% endif %}">
+                <td>
+                  <span class="fw-semibold {% if sch.is_cancelled %}text-decoration-line-through{% endif %}">{{ sch.title }}</span>
+                  {% if sch.course %}<br><small class="text-muted">{{ sch.course.title }} {% if sch.subject %}- {{ sch.subject.title }}{% endif %}</small>{% endif %}
+                </td>
+                <td>
+                  {% if sch.assigned_sub_educator %}
+                    {{ sch.assigned_sub_educator.full_name }}
+                  {% else %}
+                    {{ sch.educator.full_name }}
+                  {% endif %}
+                </td>
                 <td>{{ sch.start_time|date:"d M Y H:i" }}</td>
                 <td>{{ sch.duration_minutes }} min</td>
-                <td><a href="{% url 'attendance_view' sch.pk %}" class="btn btn-xs btn-outline-secondary">View Attendance</a></td>
+                 <td>
+                  <a href="{% url 'attendance_view' sch.pk %}" class="btn btn-xs btn-outline-secondary">View Attendance</a>
+                  {% if not is_sub_educator and sch.is_cancelled %}
+                  <a href="{% url 'schedule_delete' sch.pk %}" class="btn btn-xs btn-danger ms-1" onclick="return confirm('Are you sure you want to delete this cancelled class schedule?');"><i class="bi bi-trash me-1"></i>Delete</a>
+                  {% endif %}
+                </td>
               </tr>
               {% empty %}
-              <tr><td colspan="4" class="text-center text-muted py-3">No past classes</td></tr>
+              <tr><td colspan="5" class="text-center text-muted py-3">No past classes</td></tr>
               {% endfor %}
             </tbody>
           </table>

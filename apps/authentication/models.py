@@ -38,6 +38,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     is_approved = models.BooleanField(default=True)  # Educators need admin approval
     selected_category = models.ForeignKey('courses.Category', on_delete=models.SET_NULL, null=True, blank=True, related_name='students')
+    linked_educator = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='linked_students', limit_choices_to={'role': 'educator'}, help_text='Educator linked via promo code')
     date_joined = models.DateTimeField(default=timezone.now)
     last_login = models.DateTimeField(null=True, blank=True)
 
@@ -67,9 +68,15 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 
 class EducatorProfile(models.Model):
+    EDUCATOR_TYPE_CHOICES = [
+        ('individual', 'Individual Educator'),
+        ('institute', 'Institute'),
+    ]
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='educator_profile')
+    educator_type = models.CharField(max_length=20, choices=EDUCATOR_TYPE_CHOICES, default='individual')
     bio = models.TextField(blank=True)
     institute_name = models.CharField(max_length=200, blank=True, help_text="Name of your coaching center or institute")
+    parent_institute = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE, related_name='sub_educators', help_text="The institute that created this educator account")
     institute_details = models.TextField(blank=True, help_text="Details about your institute")
     subjects = models.CharField(max_length=500, blank=True, help_text="Comma-separated subjects")
     primary_category = models.ForeignKey('courses.Category', on_delete=models.SET_NULL, null=True, blank=True, related_name='educators')
@@ -119,3 +126,14 @@ class Follower(models.Model):
 
     def __str__(self):
         return f"{self.student.full_name} follows {self.educator.full_name}"
+
+class PromoCode(models.Model):
+    code = models.CharField(max_length=20, unique=True)
+    educator = models.OneToOneField(User, on_delete=models.CASCADE, related_name='promo_code_obj', limit_choices_to={'role': 'educator'})
+    is_active = models.BooleanField(default=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_promos')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.code} ({self.educator.full_name})"
+

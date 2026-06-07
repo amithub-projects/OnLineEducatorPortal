@@ -17,7 +17,7 @@
         <div class="col-lg-8">
           <div class="dash-card">
             <div class="dash-card-header">
-              <h5 class="mb-0">Course Content & Videos</h5>
+              <h5 class="mb-0">Course Content (Subjects)</h5>
             </div>
             <div class="p-3">
               {% for module in modules %}
@@ -46,11 +46,11 @@
                   </div>
                 </div>
                 {% empty %}
-                <p class="text-muted p-3 mb-0 small">No lessons or videos in this module.</p>
+                <p class="text-muted p-3 mb-0 small">No lessons or videos in this subject.</p>
                 {% endfor %}
               </div>
               {% empty %}
-              <p class="text-muted text-center p-4">The educator has not added any modules yet.</p>
+              <p class="text-muted text-center p-4">The educator has not added any subjects yet.</p>
               {% endfor %}
             </div>
           </div>

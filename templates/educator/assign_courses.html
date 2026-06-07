@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Assign Subjects to {{ sub_educator.full_name }} - Educator Dashboard{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+{% block content %}
+<div class="dashboard-layout">
+  {% include 'educator/sidebar.html' %}
+  <div class="dashboard-main">
+    <div class="dashboard-topbar">
+      <h4 class="mb-0">Assign Subjects to {{ sub_educator.full_name }}</h4>
+      <a href="{% url 'manage_sub_educators' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back</a>
+    </div>
+    <div class="p-4"><div class="row justify-content-center"><div class="col-lg-8">
+      <div class="dash-card p-4">
+        <p class="text-muted mb-4">Select the subjects you want to assign to this sub-educator. They will appear in live class scheduling for those subjects.</p>
+
+        <form method="post">
+          {% csrf_token %}
+          {% if subjects_by_course %}
+          <div class="mb-4">
+            <div class="border rounded p-3" style="max-height: 460px; overflow-y: auto;">
+              {% for item in subjects_by_course %}
+              <p class="text-muted small fw-bold mb-1 mt-3 text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.05em;">
+                <i class="bi bi-journal-bookmark me-1 text-primary"></i>{{ item.course.title }}
+              </p>
+              {% for subject in item.subjects %}
+              <div class="form-check ms-3 mb-1">
+                <input class="form-check-input" type="checkbox" name="assigned_subjects"
+                  value="{{ subject.id }}" id="subject_{{ subject.id }}"
+                  {% if subject.id in assigned_subject_ids %}checked{% endif %}>
+                <label class="form-check-label fw-medium" for="subject_{{ subject.id }}">
+                  {{ subject.title }}
+                  {% if subject.id in assigned_subject_ids %}
+                    <span class="badge bg-success-subtle text-success border border-success border-opacity-25 ms-1" style="font-size:0.7rem;">Assigned</span>
+                  {% endif %}
+                </label>
+              </div>
+              {% endfor %}
+              {% endfor %}
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary px-4">Save Assignments</button>
+          {% else %}
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>No subjects found. <a href="{% url 'course_create' %}" class="alert-link">Create a course</a> and add subjects to it first.
+          </div>
+          {% endif %}
+        </form>
+      </div>
+    </div></div></div>
+  </div>
+</div>
+{% endblock %}
+

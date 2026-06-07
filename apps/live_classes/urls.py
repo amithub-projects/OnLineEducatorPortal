@@ -8,4 +8,5 @@ urlpatterns = [
     path('<int:session_pk>/end/', views.end_live_session, name='end_live_session'),
     path('room/<str:room_code>/', views.live_session_room, name='live_session_room'),
     path('join/', views.join_live_session, name='join_live_session'),
+    path('schedule/<int:schedule_pk>/go-live/', views.start_scheduled_live_session, name='start_scheduled_live'),
 ]

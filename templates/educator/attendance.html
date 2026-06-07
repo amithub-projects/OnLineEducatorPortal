@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% block title %}Class Attendance: {{ schedule.title }} - Educator{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+{% block content %}
+<div class="dashboard-layout">
+  {% include 'educator/sidebar.html' %}
+  <div class="dashboard-main">
+    <div class="dashboard-topbar">
+      <div>
+        <h4 class="mb-0">Class Attendance</h4>
+        <small class="text-muted">{{ schedule.title }}</small>
+      </div>
+      <a href="{% url 'schedule_list' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back to Schedules</a>
+    </div>
+    
+    <div class="p-4">
+      <div class="row g-4">
+        <!-- Class Metadata Card -->
+        <div class="col-lg-4">
+          <div class="dash-card p-4">
+            <h5 class="fw-bold mb-3">Class Information</h5>
+            <div class="mb-3">
+              <label class="text-muted small d-block mb-1">Class Title</label>
+              <span class="fw-semibold text-dark">{{ schedule.title }}</span>
+            </div>
+            {% if schedule.course %}
+            <div class="mb-3">
+              <label class="text-muted small d-block mb-1">Course</label>
+              <span class="fw-semibold text-dark">{{ schedule.course.title }}</span>
+            </div>
+            {% endif %}
+            {% if schedule.subject %}
+            <div class="mb-3">
+              <label class="text-muted small d-block mb-1">Subject</label>
+              <span class="fw-semibold text-dark">{{ schedule.subject.title }}</span>
+            </div>
+            {% endif %}
+            <div class="mb-3">
+              <label class="text-muted small d-block mb-1">Timing</label>
+              <span class="fw-semibold text-dark">
+                {{ schedule.start_time|date:"d M Y" }}<br>
+                <small class="text-muted">{{ schedule.start_time|time:"H:i" }} - {{ schedule.end_time|time:"H:i" }} ({{ schedule.duration_minutes }} mins)</small>
+              </span>
+            </div>
+            <div class="mb-0">
+              <label class="text-muted small d-block mb-1">Instructor</label>
+              <span class="fw-semibold text-dark">
+                {% if schedule.assigned_sub_educator %}
+                  {{ schedule.assigned_sub_educator.full_name }} (Sub-Educator)
+                {% else %}
+                  {{ schedule.educator.full_name }} (Owner)
+                {% endif %}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Attendance Table Card -->
+        <div class="col-lg-8">
+          <div class="dash-card">
+            <div class="dash-card-header d-flex justify-content-between align-items-center">
+              <h5 class="mb-0 fw-bold"><i class="bi bi-person-check-fill me-2 text-primary"></i>Attendance Sheet</h5>
+              <span class="badge bg-secondary">{{ enrolled_students|length }} Enrolled Student(s)</span>
+            </div>
+            
+            {% if not schedule.course %}
+            <div class="p-5 text-center text-muted">
+              <i class="bi bi-exclamation-circle fs-1 text-warning mb-3 d-block"></i>
+              <p class="mb-0">This class schedule is not linked to any course. Attendance tracking is only available for course-specific classes.</p>
+            </div>
+            {% elif not enrolled_students %}
+            <div class="p-5 text-center text-muted">
+              <i class="bi bi-people fs-1 mb-3 d-block"></i>
+              <p class="mb-0">No students are currently enrolled (paid) in this course.</p>
+            </div>
+            {% else %}
+            <form method="post" action="{% url 'mark_attendance' schedule.pk %}">
+              {% csrf_token %}
+              <div class="p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                      <tr>
+                        <th style="width: 50px;" class="text-center">Present</th>
+                        <th>Student</th>
+                        <th>Status</th>
+                        <th>Join Time</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for enrollment in enrolled_students %}
+                      <tr>
+                        <td class="text-center">
+                          <input type="checkbox" name="present_students" value="{{ enrollment.student.pk }}" class="form-check-input" id="student_{{ enrollment.student.pk }}" {% if enrollment.is_present %}checked{% endif %}>
+                        </td>
+                        <td>
+                          <label for="student_{{ enrollment.student.pk }}" class="d-flex align-items-center gap-2 mb-0 cursor-pointer" style="font-weight: inherit;">
+                            <div class="avatar-xs">{{ enrollment.student.full_name|first|upper }}</div>
+                            <div>
+                              <span class="fw-semibold text-dark">{{ enrollment.student.full_name }}</span><br>
+                              <small class="text-muted" style="font-size: 0.75rem;">{{ enrollment.student.email }}</small>
+                            </div>
+                          </label>
+                        </td>
+                        <td>
+                          {% if enrollment.is_present %}
+                            <span class="badge bg-success-subtle text-success border border-success border-opacity-10 rounded-pill px-2">Present</span>
+                          {% else %}
+                            <span class="badge bg-danger-subtle text-danger border border-danger border-opacity-10 rounded-pill px-2">Absent</span>
+                          {% endif %}
+                        </td>
+                        <td>
+                          {% if enrollment.joined_at %}
+                            <small class="text-muted fw-semibold">{{ enrollment.joined_at|date:"H:i:s" }}</small>
+                          {% else %}
+                            <small class="text-muted">-</small>
+                          {% endif %}
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="p-3 border-top bg-light d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-save me-1"></i>Save Attendance</button>
+              </div>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

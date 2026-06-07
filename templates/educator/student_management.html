@@ -29,6 +29,7 @@
                   </div>
                 </td>
                 <td>
+                  <a href="{% url 'student_detail_educator' enrollment.student.pk %}" class="btn btn-xs btn-primary me-1"><i class="bi bi-eye me-1"></i>View</a>
                   <a href="{% url 'private_messages' enrollment.student.pk %}" class="btn btn-xs btn-outline-primary"><i class="bi bi-chat me-1"></i>Message</a>
                 </td>
               </tr>

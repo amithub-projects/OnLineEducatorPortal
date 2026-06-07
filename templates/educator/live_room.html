@@ -78,8 +78,13 @@
 
     <!-- Chat Panel -->
     <div class="chat-panel">
-        <div class="chat-header">
-            <i class="bi bi-chat-dots-fill me-2 text-primary"></i>Live Chat
+        <div class="chat-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-chat-dots-fill me-2 text-primary"></i>Live Chat</span>
+            {% if is_educator %}
+            <button onclick="shareMeetingInfo()" class="btn btn-xs btn-outline-info" title="Share credentials in chat" style="font-size: 11px; padding: 2px 6px;">
+                <i class="bi bi-share me-1"></i>Share Info
+            </button>
+            {% endif %}
         </div>
         <div class="chat-messages" id="chatMessages">
             <div class="chat-msg system">Welcome to {{ session.title }}! Chat is live.</div>
@@ -245,11 +250,24 @@ function appendSystemMsg(msg) {
     container.scrollTop = container.scrollHeight;
 }
 
+function shareMeetingInfo() {
+    let info = `📋 Meeting Info:\n🔑 Room Code: ${ROOM_CODE}\n🔗 Join Link: ${window.location.origin}/live/room/${ROOM_CODE}/`;
+    {% if session.schedule %}
+    info += `\n📅 Class: {{ session.schedule.title }}`;
+    {% if session.schedule.meeting_link %}
+    info += `\n📎 External Link: {{ session.schedule.meeting_link }}`;
+    {% endif %}
+    {% endif %}
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'chat', content: info }));
+    }
+}
+
 function leaveSession() {
     Object.values(peerConnections).forEach(pc => pc.close());
     if (localStream) localStream.getTracks().forEach(t => t.stop());
     if (ws) ws.close();
-    window.location.href = '/educator/live/';
+    window.location.href = IS_EDUCATOR ? "{% url 'educator_dashboard' %}" : "{% url 'student_dashboard' %}";
 }
 
 init();

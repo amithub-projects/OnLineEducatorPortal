@@ -11,16 +11,26 @@
     <div class="dashboard-main">
         <div class="dashboard-topbar">
             <div>
-                <h4 class="mb-0">Welcome back, {{ request.user.full_name }}! 👋</h4>
+                <h4 class="mb-0">Welcome back, 
+                    {% if request.user.educator_profile.parent_institute %}
+                        {{ request.user.educator_profile.parent_institute.educator_profile.institute_name }} ({{ request.user.full_name }})
+                    {% elif request.user.educator_profile.educator_type == 'institute' %}
+                        {{ request.user.educator_profile.institute_name }}
+                    {% else %}
+                        {{ request.user.full_name }}
+                    {% endif %}! 👋
+                </h4>
                 <small class="text-muted">Here's what's happening with your courses today</small>
             </div>
             <div class="d-flex gap-2">
                 <a href="{% url 'create_live_session' %}" class="btn btn-danger btn-sm">
                     <i class="bi bi-camera-video-fill me-1"></i>Go Live
                 </a>
+                {% if not request.user.educator_profile.parent_institute %}
                 <a href="{% url 'course_create' %}" class="btn btn-primary btn-sm">
                     <i class="bi bi-plus-lg me-1"></i>New Course
                 </a>
+                {% endif %}
             </div>
         </div>
 
@@ -39,8 +49,13 @@
                 <div class="stat-card stat-card-purple">
                     <div class="stat-card-icon"><i class="bi bi-journal-richtext"></i></div>
                     <div class="stat-card-content">
+                        {% if request.user.educator_profile.parent_institute %}
+                        <span class="stat-card-number">{{ request.user.assigned_subjects.count }}</span>
+                        <span class="stat-card-label">Total Subjects</span>
+                        {% else %}
                         <span class="stat-card-number">{{ total_courses }}</span>
                         <span class="stat-card-label">Total Courses</span>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -69,8 +84,10 @@
             <div class="col-lg-8">
                 <div class="dash-card">
                     <div class="dash-card-header">
-                        <h5 class="mb-0">My Courses</h5>
+                        <h5 class="mb-0">{% if request.user.educator_profile.parent_institute %}My Subjects{% else %}My Courses{% endif %}</h5>
+                        {% if not request.user.educator_profile.parent_institute %}
                         <a href="{% url 'course_create' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus me-1"></i>Add Course</a>
+                        {% endif %}
                     </div>
                     <div class="table-responsive">
                         <table class="table table-hover align-middle">
@@ -115,7 +132,15 @@
                                     </td>
                                 </tr>
                                 {% empty %}
-                                <tr><td colspan="4" class="text-center py-4 text-muted">No courses yet. <a href="{% url 'course_create' %}">Create your first course!</a></td></tr>
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">
+                                        {% if request.user.educator_profile.parent_institute %}
+                                            No subjects assigned yet.
+                                        {% else %}
+                                            No courses yet. <a href="{% url 'course_create' %}">Create your first course!</a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -129,18 +154,38 @@
                 <div class="dash-card mb-4">
                     <div class="dash-card-header">
                         <h6 class="mb-0">Upcoming Classes</h6>
+                        {% if not request.user.educator_profile.parent_institute %}
                         <a href="{% url 'schedule_create' %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus"></i></a>
+                        {% endif %}
                     </div>
                     {% for cls in upcoming_classes %}
-                    <div class="schedule-item">
-                        <div class="schedule-time">{{ cls.start_time|date:"d M" }}<br><small>{{ cls.start_time|time:"H:i" }}</small></div>
-                        <div class="schedule-info">
-                            <span class="fw-semibold">{{ cls.title|truncatechars:25 }}</span><br>
-                            <small class="text-muted">{{ cls.duration_minutes }} mins</small>
+                    <div class="schedule-item d-flex align-items-center justify-content-between p-2 border-bottom">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="schedule-time bg-light text-dark rounded text-center p-1" style="min-width: 55px; font-size: 11px;">
+                                <strong>{{ cls.start_time|date:"d M" }}</strong><br>
+                                <small class="text-muted">{{ cls.start_time|time:"H:i" }}</small>
+                            </div>
+                            <div class="schedule-info">
+                                <span class="fw-semibold small d-block">{{ cls.title|truncatechars:22 }}</span>
+                                {% if cls.course %}
+                                <small class="text-muted d-block" style="font-size: 10px; line-height: 1.2;"><i class="bi bi-journal me-1"></i>Course: {{ cls.course.title|truncatechars:22 }}</small>
+                                {% endif %}
+                                <small class="text-muted" style="font-size: 10px;">{{ cls.duration_minutes }} mins</small>
+                                {% if cls.assigned_sub_educator %}
+                                <br><small class="text-info" style="font-size: 10px;"><i class="bi bi-person me-1"></i>{{ cls.assigned_sub_educator.full_name|truncatechars:15 }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div>
+                            {% if cls.live_session and cls.live_session.is_active %}
+                            <a href="{% url 'live_session_room' cls.live_session.room_code %}" class="btn btn-xs btn-danger" style="font-size: 10px; padding: 2px 6px;">Live</a>
+                            {% else %}
+                            <a href="{% url 'start_scheduled_live' cls.pk %}" class="btn btn-xs btn-outline-danger" style="font-size: 10px; padding: 2px 6px;">Start</a>
+                            {% endif %}
                         </div>
                     </div>
                     {% empty %}
-                    <p class="text-muted text-center p-3">No upcoming classes. <a href="{% url 'schedule_create' %}">Schedule one!</a></p>
+                    <p class="text-muted text-center p-3 small mb-0">No upcoming classes. {% if not request.user.educator_profile.parent_institute %}<a href="{% url 'schedule_create' %}">Schedule one!</a>{% endif %}</p>
                     {% endfor %}
                 </div>
 

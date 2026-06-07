@@ -7,6 +7,7 @@ import uuid
 class LiveSession(models.Model):
     educator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='live_sessions')
     course = models.ForeignKey(Course, on_delete=models.CASCADE, null=True, blank=True, related_name='live_sessions')
+    schedule = models.OneToOneField('scheduling.ClassSchedule', on_delete=models.SET_NULL, null=True, blank=True, related_name='live_session')
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     room_code = models.CharField(max_length=20, unique=True, blank=True)

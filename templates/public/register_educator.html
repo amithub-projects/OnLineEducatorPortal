@@ -27,6 +27,10 @@
                 {{ form.phone }}
               </div>
               <div class="col-md-6">
+                <label class="form-label">Educator Type *</label>
+                {{ form.educator_type }}
+              </div>
+              <div class="col-md-6">
                 <label class="form-label">Primary Category *</label>
                 {{ form.primary_category }}
               </div>
@@ -34,8 +38,8 @@
                 <label class="form-label">Other Subjects</label>
                 {{ form.subjects }}
               </div>
-              <div class="col-md-6">
-                <label class="form-label">Institute Name (Optional)</label>
+              <div class="col-md-6" id="institute-container">
+                <label class="form-label">Institute Name *</label>
                 {{ form.institute_name }}
               </div>
               <div class="col-md-6">
@@ -89,6 +93,33 @@
 document.querySelectorAll('#eduForm input, #eduForm textarea, #eduForm select').forEach(el => {
     if (el.tagName === 'SELECT') el.classList.add('form-select');
     else el.classList.add('form-control');
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const typeSelect = document.getElementById('id_educator_type');
+    const instituteContainer = document.getElementById('institute-container');
+    const instituteInput = document.getElementById('id_institute_name');
+
+    function toggleInstituteField() {
+        if (typeSelect.value === 'institute') {
+            instituteContainer.style.display = 'block';
+            if (instituteInput) {
+                instituteInput.required = true;
+                instituteInput.setAttribute('placeholder', 'Institute or Coaching Center Name *');
+            }
+        } else {
+            instituteContainer.style.display = 'none';
+            if (instituteInput) {
+                instituteInput.required = false;
+                instituteInput.value = '';
+            }
+        }
+    }
+
+    if (typeSelect) {
+        typeSelect.addEventListener('change', toggleInstituteField);
+        toggleInstituteField(); // Run initial toggle check
+    }
 });
 </script>
 {% endblock %}

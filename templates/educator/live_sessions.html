@@ -16,10 +16,26 @@
           <div class="dash-card p-3 h-100">
             <div class="d-flex justify-content-between align-items-start mb-2">
               <h6 class="fw-bold mb-0">{{ session.title }}</h6>
-              {% if session.is_active %}<span class="badge bg-danger"><i class="bi bi-record-circle-fill me-1"></i>LIVE</span>
-              {% else %}<span class="badge bg-secondary">Ended</span>{% endif %}
+              {% if session.is_active %}
+              <span class="badge bg-danger"><i class="bi bi-record-circle-fill me-1"></i>LIVE</span>
+              {% else %}
+              <span class="badge bg-secondary">Ended</span>
+              {% endif %}
             </div>
-            {% if session.course %}<p class="text-muted small mb-1"><i class="bi bi-journal me-1"></i>{{ session.course.title }}</p>{% endif %}
+            
+            {% if session.course %}
+            <p class="text-muted small mb-1"><i class="bi bi-journal me-1"></i>{{ session.course.title }}</p>
+            {% endif %}
+
+            {% if session.schedule %}
+            <p class="text-info small mb-1">
+              <i class="bi bi-calendar-event me-1"></i>Scheduled: {{ session.schedule.start_time|date:"d M H:i" }}
+              {% if session.schedule.assigned_sub_educator %}
+              <br><i class="bi bi-person-badge me-1"></i>Instructor: {{ session.schedule.assigned_sub_educator.full_name }}
+              {% endif %}
+            </p>
+            {% endif %}
+
             <p class="text-muted small mb-2">{{ session.description|truncatechars:80 }}</p>
             <div class="mb-3">
               <span class="badge bg-light text-dark border me-2"><i class="bi bi-key me-1"></i>{{ session.room_code }}</span>
@@ -28,9 +44,15 @@
             <div class="d-flex gap-2">
               {% if session.is_active %}
               <a href="{% url 'live_session_room' session.room_code %}" class="btn btn-danger btn-sm flex-fill"><i class="bi bi-camera-video me-1"></i>Enter Room</a>
-              <form method="post" action="{% url 'end_live_session' session.pk %}">{% csrf_token %}<button class="btn btn-outline-secondary btn-sm">End</button></form>
+              <form method="post" action="{% url 'end_live_session' session.pk %}" style="display:inline;">
+                {% csrf_token %}
+                <button class="btn btn-outline-secondary btn-sm">End</button>
+              </form>
               {% else %}
-              <form method="post" action="{% url 'start_live_session' session.pk %}" class="flex-fill">{% csrf_token %}<button class="btn btn-success btn-sm w-100">Restart</button></form>
+              <form method="post" action="{% url 'start_live_session' session.pk %}" class="flex-fill">
+                {% csrf_token %}
+                <button class="btn btn-success btn-sm w-100">Restart</button>
+              </form>
               {% endif %}
             </div>
           </div>

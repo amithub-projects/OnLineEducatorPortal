@@ -28,6 +28,12 @@
                             {{ form.phone }}
                         </div>
                         <div class="mb-3">
+                            <label class="form-label fw-semibold text-primary">Educator Promo Code (Optional)</label>
+                            {{ form.promo_code }}
+                            <small class="text-muted">If you have a promo code from an educator, enter it here to link your account to them.</small>
+                            {% if form.promo_code.errors %}<div class="text-danger small mt-1">{{ form.promo_code.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="mb-3">
                             <label class="form-label fw-semibold">Select Your Course <span class="text-danger">*</span></label>
                             {{ form.selected_category }}
                             <small class="text-muted">Choose your primary area of interest.</small>

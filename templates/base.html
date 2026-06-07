@@ -42,7 +42,9 @@
                 <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}" href="{% url 'about' %}">About</a></li>
                 {% endif %}
                 {% if not user.is_authenticated or user.role != 'educator' %}
+                {% if not user.is_authenticated or not user.linked_educator %}
                 <li class="nav-item"><a class="nav-link {% if 'educator_listing' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'educator_listing' %}">Find Educators</a></li>
+                {% endif %}
                 {% endif %}
                 <li class="nav-item"><a class="nav-link" href="{% url 'join_live_session' %}">Join Live</a></li>
                 {% if not user.is_authenticated %}
@@ -117,7 +119,9 @@
                 <h6 class="footer-heading">Platform</h6>
                 <ul class="footer-links">
                     <li><a href="{% url 'home' %}">Home</a></li>
+                    {% if not user.is_authenticated or not user.linked_educator %}
                     <li><a href="{% url 'educator_listing' %}">Find Educators</a></li>
+                    {% endif %}
                     <li><a href="{% url 'about' %}">About Us</a></li>
                     <li><a href="{% url 'contact' %}">Contact</a></li>
                 </ul>

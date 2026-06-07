@@ -267,6 +267,9 @@ def manage_categories(request):
 
 
 @admin_required
+
+
+@admin_required
 def admin_course_detail(request, pk):
     course = get_object_or_404(Course, pk=pk)
     modules = course.modules.all().prefetch_related('lessons')
@@ -281,3 +284,14 @@ def admin_delete_lesson(request, pk):
         lesson.delete()
         messages.success(request, 'Lesson/Video deleted successfully.')
     return redirect('admin_course_detail', pk=course_id)
+
+
+@admin_required
+def toggle_featured_course(request, pk):
+    """Admin-only: feature or un-feature a course on the home page."""
+    course = get_object_or_404(Course, pk=pk)
+    course.is_featured = not course.is_featured
+    course.save()
+    status = "featured on home page" if course.is_featured else "removed from home page"
+    messages.success(request, f'"{course.title}" has been {status}.')
+    return redirect('manage_courses')

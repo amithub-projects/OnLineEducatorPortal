@@ -5,6 +5,8 @@ urlpatterns = [
     path('', views.schedule_list, name='schedule_list'),
     path('create/', views.schedule_create, name='schedule_create'),
     path('<int:pk>/edit/', views.schedule_edit, name='schedule_edit'),
+    path('<int:pk>/cancel/', views.schedule_cancel, name='schedule_cancel'),
+    path('<int:pk>/delete/', views.schedule_delete, name='schedule_delete'),
     path('<int:schedule_pk>/attendance/', views.attendance_view, name='attendance_view'),
     path('<int:schedule_pk>/attendance/mark/', views.mark_attendance, name='mark_attendance'),
 ]

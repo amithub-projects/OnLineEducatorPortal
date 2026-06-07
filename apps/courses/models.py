@@ -19,6 +19,7 @@ class Course(models.Model):
     LEVEL_CHOICES = [('beginner', 'Beginner'), ('intermediate', 'Intermediate'), ('advanced', 'Advanced')]
 
     educator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='courses')
+    assigned_educator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_courses')
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
     title = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, blank=True)
@@ -29,6 +30,7 @@ class Course(models.Model):
     duration_hours = models.PositiveIntegerField(default=0)
     is_published = models.BooleanField(default=False)
     is_free = models.BooleanField(default=False)
+    is_featured = models.BooleanField(default=False, help_text='Only admin can feature a course on the home page')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -51,6 +53,7 @@ class Module(models.Model):
     title = models.CharField(max_length=200)
     order = models.PositiveIntegerField(default=0)
     description = models.TextField(blank=True)
+    assigned_sub_educators = models.ManyToManyField(User, blank=True, related_name='assigned_subjects', limit_choices_to={'role': 'educator'})
 
     class Meta:
         ordering = ['order']

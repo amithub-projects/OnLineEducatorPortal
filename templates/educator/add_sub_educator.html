@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}Add Sub-Educator - Educator Dashboard{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+{% block content %}
+<div class="dashboard-layout">
+  {% include 'educator/sidebar.html' %}
+  <div class="dashboard-main">
+    <div class="dashboard-topbar">
+      <h4 class="mb-0">Add Sub-Educator</h4>
+      <a href="{% url 'manage_sub_educators' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back</a>
+    </div>
+    <div class="p-4"><div class="row justify-content-center"><div class="col-lg-6">
+      <div class="dash-card p-4">
+        <form method="post">
+          {% csrf_token %}
+          {% if form.errors %}
+          <div class="alert alert-danger">
+            <ul class="mb-0">
+              {% for field in form %}
+                {% for error in field.errors %}<li><strong>{{ field.label }}:</strong> {{ error }}</li>{% endfor %}
+              {% endfor %}
+              {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Full Name *</label>
+            {{ form.full_name }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Email *</label>
+            {{ form.email }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Phone</label>
+            {{ form.phone }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Password *</label>
+            {{ form.password }}
+            <div class="form-text">They will use this password to log in.</div>
+          </div>
+          {% if subjects_by_course %}
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Assign Subjects</label>
+            <div class="border rounded p-3" style="max-height: 280px; overflow-y: auto;">
+              {% for item in subjects_by_course %}
+              <p class="text-muted small fw-semibold mb-1 mt-2 text-uppercase" style="font-size:0.7rem; letter-spacing:0.05em;">
+                <i class="bi bi-journal-bookmark me-1"></i>{{ item.course.title }}
+              </p>
+              {% for subject in item.subjects %}
+              <div class="form-check ms-2">
+                <input class="form-check-input" type="checkbox" name="assigned_subjects" value="{{ subject.id }}" id="subject_{{ subject.id }}">
+                <label class="form-check-label" for="subject_{{ subject.id }}">
+                  {{ subject.title }}
+                </label>
+              </div>
+              {% endfor %}
+              {% endfor %}
+            </div>
+            <div class="form-text">Select subjects to assign to this sub-educator. You can also update assignments later.</div>
+          </div>
+          {% endif %}
+          <button type="submit" class="btn btn-primary w-100 mt-3">Create Sub-Educator</button>
+        </form>
+      </div>
+    </div></div></div>
+  </div>
+</div>
+{% endblock %}

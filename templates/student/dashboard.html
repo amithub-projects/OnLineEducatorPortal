@@ -1,18 +1,47 @@
 {% extends 'base.html' %}
 {% block title %}Student Dashboard - {{ site_settings.site_name }}{% endblock %}
 {% block body_class %}dashboard-body{% endblock %}
+{% block extra_css %}
+<style>
+@keyframes pulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.7); }
+  70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(229, 62, 62, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(229, 62, 62, 0); }
+}
+.animate-pulse {
+  animation: pulse 2s infinite;
+}
+</style>
+{% endblock %}
 {% block content %}
 <div class="dashboard-layout">
   <nav class="dashboard-sidebar" style="background:#0f172a">
     <div class="sidebar-brand"><i class="bi bi-mortarboard-fill"></i><span>My Learning</span></div>
     <div class="sidebar-user">
       {% if student.avatar %}<img src="{{ student.avatar.url }}" class="sidebar-avatar">{% else %}<div class="sidebar-avatar-placeholder">{{ student.full_name|first|upper }}</div>{% endif %}
-      <div><p class="sidebar-user-name">{{ student.full_name|truncatechars:18 }}</p><span class="sidebar-user-role">Student</span></div>
+      <div>
+        <p class="sidebar-user-name">{{ student.full_name|truncatechars:18 }}</p>
+        <span class="sidebar-user-role">
+          {% if student.linked_educator %}
+            {% if student.linked_educator.educator_profile.parent_institute %}
+              {{ student.linked_educator.full_name|truncatechars:12 }} (Sub-Ed)
+            {% elif student.linked_educator.educator_profile.educator_type == 'institute' %}
+              {{ student.linked_educator.educator_profile.institute_name|truncatechars:15 }} Student
+            {% else %}
+              {{ student.linked_educator.full_name|truncatechars:15 }}'s Student
+            {% endif %}
+          {% else %}
+            Student
+          {% endif %}
+        </span>
+      </div>
     </div>
     <ul class="sidebar-nav">
       <li class="sidebar-section">Learning</li>
       <li><a href="{% url 'student_dashboard' %}" class="sidebar-link active"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a></li>
+      {% if not student.linked_educator %}
       <li><a href="{% url 'educator_listing' %}" class="sidebar-link"><i class="bi bi-search"></i><span>Find Educators</span></a></li>
+      {% endif %}
       <li><a href="{% url 'join_live_session' %}" class="sidebar-link"><i class="bi bi-camera-video"></i><span>Join Live Class</span></a></li>
       <li class="sidebar-section">Account</li>
       <li><a href="{% url 'payment_history' %}" class="sidebar-link"><i class="bi bi-receipt"></i><span>Payments</span></a></li>
@@ -24,13 +53,28 @@
     <div class="dashboard-topbar">
       <div>
         <h4 class="mb-0">Welcome, {{ student.full_name }}! 🎓</h4>
-        {% if selected_cat %}
-          <span class="badge bg-soft-primary text-primary mt-1"><i class="bi bi-book me-1"></i> {{ selected_cat.name }} Path</span>
-        {% else %}
-          <small class="text-muted">Continue your learning journey</small>
-        {% endif %}
+        <div class="d-flex flex-wrap gap-2 align-items-center mt-1">
+          {% if selected_cat %}
+            <span class="badge bg-soft-primary text-primary"><i class="bi bi-book me-1"></i> {{ selected_cat.name }} Path</span>
+          {% else %}
+            <small class="text-muted">Continue your learning journey</small>
+          {% endif %}
+          
+          {% if student.linked_educator %}
+            {% if student.linked_educator.educator_profile.parent_institute %}
+              <span class="badge bg-soft-info text-info"><i class="bi bi-building me-1"></i> Institute: {{ student.linked_educator.educator_profile.parent_institute.educator_profile.institute_name }}</span>
+              <span class="badge bg-soft-secondary text-secondary"><i class="bi bi-person me-1"></i> Sub-Educator: {{ student.linked_educator.full_name }}</span>
+            {% elif student.linked_educator.educator_profile.educator_type == 'institute' %}
+              <span class="badge bg-soft-info text-info"><i class="bi bi-building me-1"></i> Institute: {{ student.linked_educator.educator_profile.institute_name }}</span>
+            {% else %}
+              <span class="badge bg-soft-info text-info"><i class="bi bi-person me-1"></i> Educator: {{ student.linked_educator.full_name }}</span>
+            {% endif %}
+          {% endif %}
+        </div>
       </div>
+      {% if not student.linked_educator %}
       <a href="{% url 'educator_listing' %}" class="btn btn-primary btn-sm"><i class="bi bi-search me-1"></i>Find More Courses</a>
+      {% endif %}
     </div>
     <div class="p-4">
       <!-- Course Announcements -->
@@ -69,12 +113,73 @@
           </div>
         </div>
       </div>
+      
+      <!-- Upcoming Scheduled Classes -->
+      <h5 class="fw-bold mb-3 mt-4">Upcoming Scheduled Classes</h5>
+      <div class="row g-3 mb-4">
+        {% for cls in upcoming_schedules %}
+        <div class="col-md-6 col-lg-4">
+          <div class="dash-card p-3 d-flex align-items-center gap-3">
+            <div class="schedule-time text-center bg-soft-primary text-primary rounded p-2" style="min-width:65px">
+              <span class="fw-bold d-block fs-5 mb-0">{{ cls.start_time|date:"d" }}</span>
+              <small class="text-uppercase fw-semibold" style="font-size: 0.7rem;">{{ cls.start_time|date:"M" }}</small>
+            </div>
+            <div class="flex-grow-1">
+              <h6 class="mb-0 fw-bold small text-dark">{{ cls.title }}</h6>
+              {% if cls.course %}
+                <small class="text-muted d-block"><i class="bi bi-journal me-1"></i>Course: {{ cls.course.title }}</small>
+              {% endif %}
+              
+              {% if cls.educator.educator_profile.parent_institute %}
+                <!-- Sub-educator display: show educator name, institute, and subject -->
+                <small class="text-muted d-block"><i class="bi bi-person me-1"></i>Educator: {{ cls.educator.full_name }}</small>
+                <small class="text-muted d-block"><i class="bi bi-building me-1"></i>Institute: {{ cls.educator.educator_profile.parent_institute.educator_profile.institute_name }}</small>
+                <small class="text-muted d-block"><i class="bi bi-journal-text me-1"></i>Subject: {% if cls.subject %}{{ cls.subject.title }}{% elif cls.course %}{{ cls.course.title }}{% else %}{{ cls.educator.educator_profile.subjects|default:"General" }}{% endif %}</small>
+              {% else %}
+                <small class="text-muted d-block"><i class="bi bi-person me-1"></i>
+                  {% if cls.educator.educator_profile.educator_type == 'institute' %}
+                    Institute: {{ cls.educator.educator_profile.institute_name }}
+                  {% else %}
+                    Educator: {{ cls.educator.full_name }}
+                  {% endif %}
+                </small>
+                <small class="text-muted d-block"><i class="bi bi-journal-text me-1"></i>Subject: {% if cls.subject %}{{ cls.subject.title }}{% elif cls.course %}{{ cls.course.title }}{% else %}{{ cls.educator.educator_profile.subjects|default:"General" }}{% endif %}</small>
+              {% endif %}
+              
+              <small class="text-muted d-block"><i class="bi bi-clock me-1"></i>{{ cls.start_time|time:"H:i" }} - {{ cls.end_time|time:"H:i" }} ({{ cls.duration_minutes }} mins)</small>
+            </div>
+            <div class="d-flex flex-column gap-1 align-items-end">
+              {% if cls.live_session and cls.live_session.is_active %}
+                <a href="{% url 'live_session_room' cls.live_session.room_code %}" class="btn btn-danger btn-sm rounded-pill px-3 animate-pulse" style="animation: pulse 2s infinite;">
+                  <i class="bi bi-broadcast me-1"></i>Join Live
+                </a>
+              {% elif cls.meeting_link %}
+                <a href="{{ cls.meeting_link }}" target="_blank" class="btn btn-primary btn-sm rounded-pill px-3">
+                  <i class="bi bi-link-45deg me-1"></i>External Link
+                </a>
+              {% else %}
+                <span class="badge bg-secondary">Scheduled</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+          <div class="p-4 bg-light rounded text-center">
+            <i class="bi bi-calendar-x fs-3 text-muted"></i>
+            <p class="text-muted mb-0 mt-2 small">No upcoming scheduled classes found.</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
 
       <!-- Recommended Educators -->
       {% if recommended_educators %}
       <div class="d-flex justify-content-between align-items-center mb-3 mt-5">
         <h5 class="fw-bold mb-0">Recommended for Your Path</h5>
+        {% if not student.linked_educator %}
         <a href="{% url 'educator_listing' %}{% if selected_cat %}?category={{ selected_cat.slug }}{% endif %}" class="small text-decoration-none">View All <i class="bi bi-arrow-right"></i></a>
+        {% endif %}
       </div>
       <div class="row g-3">
         {% for educator in recommended_educators %}
@@ -120,29 +225,35 @@
         <div class="col-12 text-center py-5">
           <i class="bi bi-journal-x fs-1 text-muted"></i>
           <h5 class="mt-3 text-muted">No courses enrolled yet</h5>
+          {% if not student.linked_educator %}
           <a href="{% url 'educator_listing' %}" class="btn btn-primary mt-2">Find an Educator</a>
+          {% else %}
+          <p class="text-muted small mt-2">Contact your educator for course access.</p>
+          {% endif %}
         </div>
         {% endfor %}
       </div>
 
-      {% if free_lessons %}
-      <h5 class="fw-bold mt-5 mb-3">Free Lessons from Your Favourites</h5>
+       {% if free_lessons %}
+      <h5 class="fw-bold mt-5 mb-3"><i class="bi bi-gift me-2 text-success"></i>Free Lessons from Your Favourites</h5>
       <div class="row g-4">
         {% for lesson in free_lessons %}
         <div class="col-md-6 col-lg-4">
-          <div class="course-card border-0 shadow-sm">
+          <div class="course-card border-0 shadow-sm position-relative overflow-hidden" style="border: 1px solid rgba(25, 135, 84, 0.1) !important;">
             <div class="position-relative">
               <div class="course-thumbnail" style="height:140px">
                 {% if lesson.module.course.thumbnail %}<img src="{{ lesson.module.course.thumbnail.url }}" alt="{{ lesson.title }}">{% else %}<div class="course-thumb-placeholder"><i class="bi bi-play-circle-fill"></i></div>{% endif %}
               </div>
-              <span class="badge bg-success position-absolute top-0 end-0 m-2">Free</span>
+              <span class="badge bg-success position-absolute top-0 end-0 m-2"><i class="bi bi-unlock-fill me-1"></i>FREE PREVIEW</span>
             </div>
             <div class="course-body">
-              <h6 class="course-title mb-1">{{ lesson.title }}</h6>
+              <h6 class="course-title mb-1 text-dark fw-bold">{{ lesson.title }}</h6>
               <p class="small text-muted mb-2"><i class="bi bi-journal-text me-1"></i>{{ lesson.module.course.title }}</p>
-              <div class="d-flex justify-content-between align-items-center">
-                <small class="text-primary fw-semibold">{{ lesson.module.course.educator.full_name }}</small>
-                <a href="{% url 'lesson_preview' lesson.pk %}" class="btn btn-primary btn-sm rounded-pill px-3">Watch Now</a>
+              <div class="d-flex justify-content-between align-items-center mt-3">
+                <small class="text-primary fw-bold"><i class="bi bi-person-badge me-1"></i>{{ lesson.module.course.educator.full_name }}</small>
+                <a href="{% url 'lesson_preview' lesson.pk %}" class="btn btn-outline-success btn-sm rounded-pill px-3 fw-semibold">
+                  <i class="bi bi-play-fill me-1"></i>Watch Free
+                </a>
               </div>
             </div>
           </div>
