@@ -21,6 +21,14 @@ I have successfully completed the development of your **Online Educator Teaching
 - Comprehensive dashboard for Educators to view statistics, manage students, track payments, and schedule classes.
 - Public Educator Listing page with filtering capabilities (by name, subject, experience).
 
+### 16. Live Class WebSocket and WebRTC Signaling/Chat Fixes
+- **Case-Insensitive Room Code Routing**: Updated room code regex in [routing.py](file:///c:/Users/amitc/OneDrive/Documents/Online-Teaching/apps/live_classes/routing.py) to `[a-zA-Z0-9]+` to avoid HTTP 404 or connection failures on casing mismatches.
+- **Room Code Normalization**: Normalized room code to uppercase in `LiveClassConsumer.connect()` in [consumers.py](file:///c:/Users/amitc/OneDrive/Documents/Online-Teaching/apps/live_classes/consumers.py).
+- **Secure/Unsecure Protocol Selection**: Updated room script in [live_room.html](file:///c:/Users/amitc/OneDrive/Documents/Online-Teaching/templates/educator/live_room.html) to dynamically select between `ws://` and `wss://` based on the active HTTPS/HTTP protocol and normalize room codes.
+- **WebRTC Race Conditions & Stream Fallbacks**: Implemented WebRTC candidate queueing to avoid candidate rejection prior to setting remote session descriptions, and added `MediaStream` track wrap fallbacks when default stream arrays are empty.
+- **WebSocket Testing**: Wrote unit tests `LiveClassWebSocketTests` in [tests.py](file:///c:/Users/amitc/OneDrive/Documents/Online-Teaching/apps/live_classes/tests.py) verifying WebSocket authentication, rejection of anonymous users, and real-time chat broadcast.
+- **WebRTC Cascading Media Fallback & UI Placeholders**: Updated [live_room.html](file:///c:/Users/amitc/OneDrive/Documents/Online-Teaching/templates/educator/live_room.html) to try requesting both video & audio; if camera is missing/denied, it falls back to audio-only (and video-only if mic is missing). If video is disabled/missing, it replaces local and remote video elements with a user-friendly camera placeholder and disables/adjusts the microphone/camera buttons in the room toolbar.
+
 ### 4. Real-time Features (Django Channels)
 - **WebRTC Live Classes**: Built a custom signaling server using Django Channels and WebSockets.
   - The `LiveClassConsumer` handles SDP offers, answers, and ICE candidates for peer-to-peer WebRTC video/audio streaming.

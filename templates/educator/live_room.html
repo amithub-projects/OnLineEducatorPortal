@@ -103,21 +103,119 @@ const ROOM_CODE = "{{ room_code }}";
 const MY_NAME = "{{ request.user.full_name }}";
 const MY_ID = "{{ request.user.pk }}";
 const IS_EDUCATOR = {{ is_educator|lower }};
-const WS_URL = `ws://${window.location.host}/ws/live/${ROOM_CODE}/`;
+const ws_scheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
+const WS_URL = `${ws_scheme}://${window.location.host}/ws/live/${ROOM_CODE.toUpperCase()}/`;
 
 let localStream, ws, peerConnections = {};
 let micOn = true, camOn = true;
 
 const iceServers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
+let hasVideo = false;
+let hasAudio = false;
+
+function getMediaErrorMsg(e) {
+    if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
+        return '❌ Permission denied. Please allow camera/mic access in your browser settings.';
+    } else if (e.name === 'NotFoundError' || e.name === 'DevicesNotFoundError') {
+        return '❌ Camera/microphone not found. Check if your laptop webcam is enabled, connected, or if a physical shutter/privacy switch is closed.';
+    } else if (e.name === 'NotReadableError' || e.name === 'TrackStartError') {
+        return '⚠️ Webcam is already in use by another application (e.g. Zoom, Teams, Skype) or blocked.';
+    } else if (e.name === 'OverconstrainedError') {
+        return '❌ Camera resolution/constraints could not be satisfied.';
+    } else if (e.name === 'SecurityError') {
+        return '❌ Security error: media access blocked by browser security rules.';
+    }
+    return `❌ Could not access media devices: ${e.message || e.name || e}`;
+}
+
 async function init() {
+    if (!window.isSecureContext) {
+        appendSystemMsg('⚠️ WebRTC requires a secure context (HTTPS or localhost). Camera/Mic access is blocked by the browser on plain HTTP.');
+    }
+    
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        appendSystemMsg('❌ Media devices API is not supported by this browser or blocked due to non-secure HTTP context.');
+        disableCamUI();
+        disableMicUI();
+        connectWS();
+        return;
+    }
+
     try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        hasVideo = true;
+        hasAudio = true;
         document.getElementById('localVideo').srcObject = localStream;
         connectWS();
     } catch (e) {
-        appendSystemMsg('Could not access camera/mic. Check permissions.');
-        connectWS();
+        console.warn("Could not capture both video and audio. Trying audio only...", e);
+        const firstErr = getMediaErrorMsg(e);
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+            hasVideo = false;
+            hasAudio = true;
+            document.getElementById('localVideo').srcObject = localStream;
+            disableCamUI();
+            appendSystemMsg(firstErr);
+            connectWS();
+        } catch (err) {
+            console.warn("Could not capture audio only either. Trying video only...", err);
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                hasVideo = true;
+                hasAudio = false;
+                document.getElementById('localVideo').srcObject = localStream;
+                disableMicUI();
+                appendSystemMsg(getMediaErrorMsg(err));
+                connectWS();
+            } catch (err2) {
+                console.error("Could not capture video or audio.", err2);
+                appendSystemMsg(getMediaErrorMsg(err2));
+                disableCamUI();
+                disableMicUI();
+                connectWS();
+            }
+        }
+    }
+}
+
+function disableCamUI() {
+    const camBtn = document.getElementById('camBtn');
+    if (camBtn) {
+        camBtn.disabled = true;
+        camBtn.classList.remove('active');
+        camBtn.style.opacity = '0.5';
+        camBtn.style.cursor = 'not-allowed';
+        camBtn.title = 'Camera not detected or disabled';
+        const camIcon = document.getElementById('camIcon');
+        if (camIcon) camIcon.className = 'bi bi-camera-video-off-fill';
+    }
+    const localVid = document.getElementById('localVideo');
+    if (localVid) {
+        localVid.style.display = 'none';
+    }
+    const localTile = document.getElementById('localTile');
+    if (localTile && !document.getElementById('localCamPlaceholder')) {
+        const placeholder = document.createElement('div');
+        placeholder.id = 'localCamPlaceholder';
+        placeholder.className = 'd-flex align-items-center justify-content-center h-100 text-muted';
+        placeholder.style.background = '#1a1a2e';
+        placeholder.innerHTML = '<div class="text-center"><i class="bi bi-camera-video-off-fill fs-2"></i><div class="small mt-1">Camera disabled/not found</div></div>';
+        localTile.insertBefore(placeholder, localVid);
+    }
+}
+
+function disableMicUI() {
+    const micBtn = document.getElementById('micBtn');
+    if (micBtn) {
+        micBtn.disabled = true;
+        micBtn.classList.remove('active');
+        micBtn.style.opacity = '0.5';
+        micBtn.style.cursor = 'not-allowed';
+        micBtn.title = 'Microphone not detected or disabled';
+        const micIcon = document.getElementById('micIcon');
+        if (micIcon) micIcon.className = 'bi bi-mic-mute-fill';
     }
 }
 
@@ -133,18 +231,44 @@ function connectWS() {
             if (localStream) await callPeer(data.user_id);
         } else if (data.type === 'participant_left') {
             appendSystemMsg(`${data.user_name} left`);
-            if (peerConnections[data.user_id]) {
-                peerConnections[data.user_id].close();
+            const pc = peerConnections[data.user_id];
+            if (pc) {
+                pc.close();
                 delete peerConnections[data.user_id];
-                const vid = document.getElementById('video_' + data.user_id);
-                if (vid) vid.closest('.video-tile').remove();
+                const tile = document.getElementById('tile_' + data.user_id);
+                if (tile) tile.remove();
             }
         } else if (data.type === 'offer' && data.target_id === MY_ID) {
             await handleOffer(data);
         } else if (data.type === 'answer' && data.target_id === MY_ID) {
-            await peerConnections[data.sender_id]?.setRemoteDescription(data.sdp);
+            const pc = peerConnections[data.sender_id];
+            if (pc) {
+                await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                if (pc.iceQueue) {
+                    for (const candidate of pc.iceQueue) {
+                        try {
+                            await pc.addIceCandidate(new RTCIceCandidate(candidate));
+                        } catch (err) {
+                            console.error("Error adding queued ice candidate:", err);
+                        }
+                    }
+                    pc.iceQueue = [];
+                }
+            }
         } else if (data.type === 'ice-candidate' && data.target_id === MY_ID) {
-            await peerConnections[data.sender_id]?.addIceCandidate(data.candidate);
+            const pc = peerConnections[data.sender_id];
+            if (pc) {
+                if (pc.remoteDescription && pc.remoteDescription.type) {
+                    try {
+                        await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+                    } catch (err) {
+                        console.error("Error adding ice candidate:", err);
+                    }
+                } else {
+                    if (!pc.iceQueue) pc.iceQueue = [];
+                    pc.iceQueue.push(data.candidate);
+                }
+            }
         } else if (data.type === 'chat') {
             appendChatMsg(data.sender_name, data.content, data.sender_id === MY_ID);
         }
@@ -160,10 +284,20 @@ async function callPeer(peerId) {
 
 async function handleOffer(data) {
     const pc = createPC(data.sender_id);
-    await pc.setRemoteDescription(data.sdp);
+    await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
     ws.send(JSON.stringify({ type: 'answer', sdp: answer, target_id: data.sender_id }));
+    if (pc.iceQueue) {
+        for (const candidate of pc.iceQueue) {
+            try {
+                await pc.addIceCandidate(new RTCIceCandidate(candidate));
+            } catch (err) {
+                console.error("Error adding queued ice candidate:", err);
+            }
+        }
+        pc.iceQueue = [];
+    }
 }
 
 function createPC(peerId) {
@@ -173,7 +307,10 @@ function createPC(peerId) {
     pc.onicecandidate = e => {
         if (e.candidate) ws.send(JSON.stringify({ type: 'ice-candidate', candidate: e.candidate, target_id: peerId }));
     };
-    pc.ontrack = e => addRemoteVideo(peerId, e.streams[0]);
+    pc.ontrack = e => {
+        const stream = e.streams && e.streams[0] ? e.streams[0] : new MediaStream([e.track]);
+        addRemoteVideo(peerId, stream);
+    };
     return pc;
 }
 
@@ -186,7 +323,44 @@ function addRemoteVideo(peerId, stream) {
         tile.innerHTML = `<video id="video_${peerId}" autoplay playsinline></video><span class="video-tile-label">Participant</span>`;
         document.getElementById('videoGrid').appendChild(tile);
     }
-    document.getElementById('video_' + peerId).srcObject = stream;
+    const videoEl = document.getElementById('video_' + peerId);
+    if (videoEl.srcObject !== stream) {
+        videoEl.srcObject = stream;
+    }
+
+    // Handle remote video placeholder if there is no video track in the stream
+    const videoTrack = stream.getVideoTracks()[0];
+    const placeholderId = 'placeholder_' + peerId;
+    let placeholder = document.getElementById(placeholderId);
+    
+    const updatePlaceholder = () => {
+        const isVideoActive = videoTrack && videoTrack.enabled && videoTrack.readyState === 'live';
+        if (!isVideoActive) {
+            videoEl.style.display = 'none';
+            if (!placeholder) {
+                placeholder = document.createElement('div');
+                placeholder.id = placeholderId;
+                placeholder.className = 'd-flex align-items-center justify-content-center h-100 text-muted';
+                placeholder.style.background = '#1a1a2e';
+                placeholder.innerHTML = '<div class="text-center"><i class="bi bi-camera-video-off-fill fs-2"></i><div class="small mt-1">Camera disabled/not found</div></div>';
+                tile.insertBefore(placeholder, videoEl);
+            }
+        } else {
+            videoEl.style.display = 'block';
+            if (placeholder) {
+                placeholder.remove();
+                placeholder = null;
+            }
+        }
+    };
+
+    updatePlaceholder();
+
+    if (videoTrack) {
+        videoTrack.onmute = updatePlaceholder;
+        videoTrack.onunmute = updatePlaceholder;
+        videoTrack.onended = updatePlaceholder;
+    }
 }
 
 function toggleMic() {
@@ -213,12 +387,28 @@ async function toggleScreenShare() {
             if (sender) sender.replaceTrack(screenTrack);
         });
         document.getElementById('localVideo').srcObject = screenStream;
+        
+        // Hide placeholder if active during screen share
+        const placeholder = document.getElementById('localCamPlaceholder');
+        if (placeholder) placeholder.style.display = 'none';
+        document.getElementById('localVideo').style.display = 'block';
+        
         screenTrack.onended = () => {
             Object.values(peerConnections).forEach(pc => {
                 const sender = pc.getSenders().find(s => s.track?.kind === 'video');
-                if (sender && localStream) sender.replaceTrack(localStream.getVideoTracks()[0]);
+                if (sender && localStream && localStream.getVideoTracks().length > 0) {
+                    sender.replaceTrack(localStream.getVideoTracks()[0]);
+                } else if (sender) {
+                    sender.replaceTrack(null);
+                }
             });
             document.getElementById('localVideo').srcObject = localStream;
+            
+            // Restore placeholder if camera remains disabled/not found
+            if (!hasVideo) {
+                document.getElementById('localVideo').style.display = 'none';
+                if (placeholder) placeholder.style.display = 'flex';
+            }
         };
     } catch (e) { appendSystemMsg('Screen sharing cancelled or not supported.'); }
 }

@@ -11,11 +11,11 @@ class LiveClassConsumer(AsyncWebsocketConsumer):
     """
 
     async def connect(self):
-        self.room_code = self.scope['url_route']['kwargs']['room_code']
+        self.room_code = self.scope['url_route']['kwargs']['room_code'].upper()
         self.room_group_name = f'live_{self.room_code}'
-        self.user = self.scope['user']
+        self.user = self.scope.get('user')
 
-        if not self.user.is_authenticated:
+        if not self.user or not self.user.is_authenticated:
             await self.close()
             return
 

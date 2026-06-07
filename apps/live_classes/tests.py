@@ -220,3 +220,71 @@ class LiveClassEndingTests(TestCase):
         self.session.refresh_from_db()
         self.assertFalse(self.session.is_active)
 
+
+from django.test import TransactionTestCase
+from channels.testing import WebsocketCommunicator
+from config.asgi import application
+from django.contrib.auth.models import AnonymousUser
+
+class LiveClassWebSocketTests(TransactionTestCase):
+    def setUp(self):
+        self.client = Client()
+        self.educator = User.objects.create_user(
+            email='educator_ws@example.com',
+            password='password123',
+            full_name='WS Educator',
+            role='educator'
+        )
+        self.session = LiveSession.objects.create(
+            educator=self.educator,
+            title='WS Live Class',
+            is_active=True
+        )
+        self.client.login(email='educator_ws@example.com', password='password123')
+        self.session_key = self.client.session.session_key
+
+    async def test_websocket_connect_authenticated(self):
+        headers = [
+            (b'cookie', f'sessionid={self.session_key}'.encode()),
+            (b'host', b'localhost'),
+            (b'origin', b'http://localhost')
+        ]
+        communicator = WebsocketCommunicator(
+            application, 
+            f"/ws/live/{self.session.room_code}/",
+            headers=headers
+        )
+        
+        connected, subprotocol = await communicator.connect()
+        self.assertTrue(connected)
+        
+        # Receive the initial participant_joined event
+        join_event = await communicator.receive_json_from()
+        self.assertEqual(join_event['type'], 'participant_joined')
+        self.assertEqual(join_event['user_name'], 'WS Educator')
+        
+        # Test sending chat message
+        await communicator.send_json_to({
+            'type': 'chat',
+            'content': 'Hello room!'
+        })
+        
+        # Receive broadcasted chat message
+        response = await communicator.receive_json_from()
+        self.assertEqual(response['type'], 'chat')
+        self.assertEqual(response['content'], 'Hello room!')
+        self.assertEqual(response['sender_name'], 'WS Educator')
+        
+        await communicator.disconnect()
+
+    async def test_websocket_connect_anonymous_rejected(self):
+        communicator = WebsocketCommunicator(
+            application, 
+            f"/ws/live/{self.session.room_code}/"
+        )
+        communicator.scope['user'] = AnonymousUser()
+        
+        connected, subprotocol = await communicator.connect()
+        self.assertFalse(connected)
+
+
